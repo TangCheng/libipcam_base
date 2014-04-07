@@ -27,7 +27,7 @@ include_HEADERS = \
 	service.h
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libipcam_base-0.1.00.pc
+pkgconfig_DATA = libipcam_base-0.1.00.pc.in
 
 EXTRA_DIST = \
 	libipcam_base-0.1.00.pc.in

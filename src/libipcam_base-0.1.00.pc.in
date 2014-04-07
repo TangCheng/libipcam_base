@@ -3,7 +3,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 datarootdir=@datarootdir@
 datadir=@datadir@
-includedir=@includedir@/liblibipcam_base-0.1.00
+includedir=@includedir@/libipcam_base-0.1.00
 
 Name: liblibipcam_base
 Description: Sample library created by Anjuta project wizard.
