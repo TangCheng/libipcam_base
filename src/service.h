@@ -1,28 +1,29 @@
 #ifndef __SERVICE_H__
 #define __SERVICE_H__
+
 #include <glib-object.h>
 
-#define SERVICE_TYPE (service_get_type())
-#define SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), SERVICE_TYPE, Service))
+#define IPCAM_SERVICE_TYPE (ipcam_service_get_type())
+#define IPCAM_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), IPCAM_SERVICE_TYPE, IpcamService))
+#define IPCAM_SERVICE_CLASS(klass) (GTYPE_CHECK_CLASS_CAST((klass), IPCAM_SERVICE_TYPE, IpcamServiceClass))
+#define IPCAM_IS_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), IPCAM_SERVICE_TYPE))
+#define IPCAM_IS_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), IPCAM_SERVICE_TYPE))
+#define IPCAM_SERVICE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), IPCAM_SERVICE_TYPE, IpcamServiceClass))
 
-typedef struct _Service Service;
-typedef struct _ServiceClass ServiceClass;
+typedef struct _IpcamService IpcamService;
+typedef struct _IpcamServiceClass IpcamServiceClass;
+typedef struct _IpcamServicePriv IpcamServicePriv;
 
-struct _Service {
-GObject parent;
-//
-gchar *name;
+struct _IpcamService {
+    GObject parent;
+    //
 };
 
-struct _ServiceClass {
-GObjectClass parent_class;
-//
+struct _IpcamServiceClass {
+    GObjectClass parent_class;
+    //
 };
 
-GType service_get_type(void);
-Service*  service_new(void);
-char* service_get_name(Service *service);
-void	service_set_name(Service *service, char *name);
-Service*  Service_new_with_name(gchar *name);
-void  Service_info(Service *service);
+GType ipcam_service_get_type(void);
+
 #endif /* __SERVICE_H__*/
