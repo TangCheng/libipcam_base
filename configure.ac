@@ -27,4 +27,5 @@ AC_OUTPUT([
 Makefile
 src/libipcam_base-0.1.0.pc
 src/Makefile
+tests/Makefile
 ])

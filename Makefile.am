@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 ## Created by Anjuta
 
-SUBDIRS = src 
+SUBDIRS = src \
+	tests 
 
 libipcam_basedocdir = ${prefix}/doc/libipcam_base
 libipcam_basedoc_DATA = \
