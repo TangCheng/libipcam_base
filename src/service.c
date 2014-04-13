@@ -120,7 +120,7 @@ static void ipcam_service_class_init(IpcamServiceClass *klass)
         g_param_spec_string("service-name",
                             "Service construct property",
                             "Set service name",
-                            "no-name-set", // default value
+                            "unknown-service", // default value
                             G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
     
     g_object_class_install_properties(this_class, N_PROPERTIES, obj_properties);
