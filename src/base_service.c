@@ -39,6 +39,8 @@ static void ipcam_base_service_dispose(GObject *self)
     {
         first_run = FALSE;
         G_OBJECT_CLASS(ipcam_base_service_parent_class)->dispose(self);
+        IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(IPCAM_BASE_SERVICE(self));
+        zmq_term(priv->mq_context);
     }
 }
 static void ipcam_base_service_finalize(GObject *self)
@@ -90,6 +92,37 @@ static void ipcam_base_service_init(IpcamBaseService *self)
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     priv->mq_context = zmq_ctx_new();
 }
+static void ipcam_base_service_start_impl(IpcamBaseService *self)
+{
+    while(TRUE)
+    {
+        
+    }
+}
+static void ipcam_base_service_stop_impl(IpcamBaseService *self)
+{
+    
+}
+static void *ipcam_base_service_bind_impl(IpcamBaseService *self, gchar *address)
+{
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
+    void *mq_socket = NULL;
+    mq_socket = zmq_socket(priv->mq_context, ZMQ_ROUTER);
+    assert(mq_socket);
+    int rc = zmq_bind(mq_socket, address);
+    assert(rc == 0);
+    return mq_socket;
+}
+static void *ipcam_base_service_connect_impl(IpcamBaseService *self, gchar *identity, gchar *address)
+{
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
+    void *mq_socket = NULL;
+    mq_socket = zmq_socket(priv->mq_context, ZMQ_DEALER);
+    assert(mq_socket);
+    int rc = zmq_connect(mq_socket, address);
+    assert(rc == 0);
+    return mq_socket;
+}
 static void ipcam_base_service_class_init(IpcamBaseServiceClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
@@ -108,4 +141,36 @@ static void ipcam_base_service_class_init(IpcamBaseServiceClass *klass)
                             G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
     
     g_object_class_install_properties(this_class, N_PROPERTIES, obj_properties);
+
+    klass->start = &ipcam_base_service_start_impl;
+    klass->stop = &ipcam_base_service_stop_impl;
+    klass->bind = &ipcam_base_service_bind_impl;
+    klass->connect = &ipcam_base_service_connect_impl;
+    klass->doregister = NULL;
+    klass->unregister = NULL;
 }
+
+void ipcam_base_service_start(IpcamBaseService *self)
+{
+    g_return_if_fail(IPCAM_IS_BASE_SERVICE(self));
+    IPCAM_BASE_SERVICE_GET_CLASS(self)->start(self);
+}
+
+void ipcam_base_service_stop(IpcamBaseService *self)
+{
+    g_return_if_fail(IPCAM_IS_BASE_SERVICE(self));
+    IPCAM_BASE_SERVICE_GET_CLASS(self)->stop(self);
+}
+
+void* ipcam_base_service_bind(IpcamBaseService *self, gchar *address)
+{
+    g_return_if_fail(IPCAM_IS_BASE_SERVICE(self));
+    IPCAM_BASE_SERVICE_GET_CLASS(self)->bind(self, address);
+}
+
+void* ipcam_base_service_connect(IpcamBaseService *self, gchar *identity, gchar *address)
+{
+    g_return_if_fail(IPCAM_IS_BASE_SERVICE(self));
+    IPCAM_BASE_SERVICE_GET_CLASS(self)->connect(self, identity, address);
+}
+

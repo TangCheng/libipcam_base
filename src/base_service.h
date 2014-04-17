@@ -22,8 +22,18 @@ struct _IpcamBaseService {
 struct _IpcamBaseServiceClass {
     GObjectClass parent_class;
     //
+    void (*start)(IpcamBaseService *self);
+    void (*stop)(IpcamBaseService *self);
+    void *(*bind)(IpcamBaseService *self, gchar *address);
+    void *(*connect)(IpcamBaseService *self, gchar *identity, gchar *address);
+    gboolean (*doregister)(IpcamBaseService *self, void *mq_socket);
+    gboolean (*unregister)(IpcamBaseService *self, void *mq_socket);
 };
 
 GType ipcam_base_service_get_type(void);
+void ipcam_base_service_start(IpcamBaseService *self);
+void ipcam_base_service_stop(IpcamBaseService *self);
+void* ipcam_base_service_bind(IpcamBaseService *self, gchar *address);
+void* ipcam_base_service_connect(IpcamBaseService *self, gchar *identity, gchar *address);
 
 #endif /* __BASE_SERVICE_H__*/
