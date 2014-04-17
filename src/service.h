@@ -1,7 +1,7 @@
 #ifndef __SERVICE_H__
 #define __SERVICE_H__
 
-#include <glib-object.h>
+#include "base_service.h"
 
 #define IPCAM_SERVICE_TYPE (ipcam_service_get_type())
 #define IPCAM_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), IPCAM_SERVICE_TYPE, IpcamService))
@@ -12,15 +12,14 @@
 
 typedef struct _IpcamService IpcamService;
 typedef struct _IpcamServiceClass IpcamServiceClass;
-typedef struct _IpcamServicePriv IpcamServicePriv;
 
 struct _IpcamService {
-    GObject parent;
+    IpcamBaseService parent;
     //
 };
 
 struct _IpcamServiceClass {
-    GObjectClass parent_class;
+    IpcamBaseServiceClass parent_class;
     //
 };
 

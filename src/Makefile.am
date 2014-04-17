@@ -16,7 +16,10 @@ lib_LTLIBRARIES = libipcam_base.la
 
 
 libipcam_base_la_SOURCES = \
-	service.c
+	base_service.c \
+	service.c \
+	base_app.c \
+	app.c
 
 libipcam_base_la_LDFLAGS = 
 
@@ -24,7 +27,10 @@ libipcam_base_la_LIBADD = $(LIBIPCAM_BASE_LIBS)
 
 include_HEADERS = \
 	libipcam_base.h \
-	service.h
+	base_service.h \
+	service.h \
+	base_app.h \
+	app.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libipcam_base-0.1.0.pc.in
