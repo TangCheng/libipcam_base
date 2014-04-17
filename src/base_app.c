@@ -1,6 +1,6 @@
 #include "base_app.h"
 
-G_DEFINE_TYPE(IpcamBaseApp, ipcam_base_app, G_TYPE_OBJECT);
+G_DEFINE_TYPE(IpcamBaseApp, ipcam_base_app, IPCAM_SERVICE_TYPE);
 
 static GObject *ipcam_base_app_constructor(GType self_type,
                                            guint n_properties,

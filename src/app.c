@@ -1,7 +1,7 @@
 #include "app.h"
 
 
-G_DEFINE_TYPE(IpcamApp, ipcam_app, G_TYPE_OBJECT);
+G_DEFINE_TYPE(IpcamApp, ipcam_app, IPCAM_BASE_APP_TYPE);
 
 static GObject *ipcam_app_constructor(GType self_type,
                                       guint n_properties,

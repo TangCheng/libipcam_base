@@ -2,7 +2,7 @@
 #include <zmq.h>
 #include <assert.h>
 
-G_DEFINE_TYPE(IpcamService, ipcam_service, G_TYPE_OBJECT);
+G_DEFINE_TYPE(IpcamService, ipcam_service, IPCAM_BASE_SERVICE_TYPE);
 
 static GObject *ipcam_service_constructor(GType self_type,
                                           guint n_properties,
