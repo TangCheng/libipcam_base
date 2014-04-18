@@ -164,13 +164,13 @@ void ipcam_base_service_stop(IpcamBaseService *self)
 
 void* ipcam_base_service_bind(IpcamBaseService *self, gchar *address)
 {
-    g_return_if_fail(IPCAM_IS_BASE_SERVICE(self));
-    IPCAM_BASE_SERVICE_GET_CLASS(self)->bind(self, address);
+    g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(self), NULL);
+    return IPCAM_BASE_SERVICE_GET_CLASS(self)->bind(self, address);
 }
 
 void* ipcam_base_service_connect(IpcamBaseService *self, gchar *identity, gchar *address)
 {
-    g_return_if_fail(IPCAM_IS_BASE_SERVICE(self));
-    IPCAM_BASE_SERVICE_GET_CLASS(self)->connect(self, identity, address);
+    g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(self), NULL);
+    return IPCAM_BASE_SERVICE_GET_CLASS(self)->connect(self, identity, address);
 }
 
