@@ -1,6 +1,7 @@
 #include "base_service.h"
 #include <zmq.h>
 #include <assert.h>
+#include <string.h>
 
 enum
 {
@@ -119,7 +120,9 @@ static void *ipcam_base_service_connect_impl(IpcamBaseService *self, gchar *iden
     void *mq_socket = NULL;
     mq_socket = zmq_socket(priv->mq_context, ZMQ_DEALER);
     assert(mq_socket);
-    int rc = zmq_connect(mq_socket, address);
+    int rc = zmq_setsockopt(mq_socket, ZMQ_IDENTITY, identity, strlen(identity));
+    assert(rc == 0);
+    rc = zmq_connect(mq_socket, address);
     assert(rc == 0);
     return mq_socket;
 }
