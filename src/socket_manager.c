@@ -5,6 +5,7 @@
 
 typedef struct _IpcamSocketManagerHashValue
 {
+    gchar *name;
     void *mq_socket;
     gint type;
 } IpcamSocketManagerHashValue;
@@ -43,6 +44,7 @@ static void ipcam_socket_manager_finalize(GObject *self)
 static void destroy_notify(gpointer data)
 {
     IpcamSocketManagerHashValue *value = (IpcamSocketManagerHashValue *)data;
+    g_free(value->name);
     free(value);
 }
 static void ipcam_socket_manager_init(IpcamSocketManager *self)
@@ -66,6 +68,7 @@ gboolean ipcam_socket_manager_add(IpcamSocketManager *socket_manager,
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
     IpcamSocketManagerHashValue *value = (IpcamSocketManagerHashValue *)malloc(sizeof(IpcamSocketManagerHashValue));
     g_return_val_if_fail(value, FALSE);
+    value->name = g_strdup(name);
     value->mq_socket = (void *)mq_socket;
     value->type = type;
     g_hash_table_insert(priv->socket_hash, (gpointer)name, (gpointer)value);
@@ -136,7 +139,7 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
     if (NULL != value)
     {
         *type = value->type;
-        // ToDo: find the name
+        name = g_strdup(value->name);
         ret = TRUE;
     }
     return ret;
