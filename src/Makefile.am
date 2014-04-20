@@ -17,6 +17,7 @@ lib_LTLIBRARIES = libipcam_base.la
 
 libipcam_base_la_SOURCES = \
 	base_service.c \
+	socket_manager.c \
 	service.c \
 	base_app.c \
 	app.c
@@ -28,6 +29,7 @@ libipcam_base_la_LIBADD = $(LIBIPCAM_BASE_LIBS)
 include_HEADERS = \
 	libipcam_base.h \
 	base_service.h \
+	socket_manager.h \
 	service.h \
 	base_app.h \
 	app.h
