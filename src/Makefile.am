@@ -16,6 +16,10 @@ lib_LTLIBRARIES = libipcam_base.la
 
 
 libipcam_base_la_SOURCES = \
+	message.c \
+	notice_message.c \
+	request_message.c \
+	response_message.c \
 	base_service.c \
 	socket_manager.c \
 	service.c \
@@ -28,6 +32,10 @@ libipcam_base_la_LIBADD = $(LIBIPCAM_BASE_LIBS)
 
 include_HEADERS = \
 	libipcam_base.h \
+	message.h \
+	notice_message.h \
+	request_message.h \
+	response_message.h \
 	base_service.h \
 	socket_manager.h \
 	service.h \
