@@ -24,5 +24,6 @@ struct _IpcamResponseMessageClass
 };
 
 GType ipcam_response_message_get_type(void);
+gboolean ipcam_response_message_has_error(IpcamResponseMessage *response_message);
 
 #endif /* __RESPONSE_MESSAGE_H__ */
