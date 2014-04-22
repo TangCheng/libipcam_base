@@ -25,5 +25,10 @@ struct _IpcamMessageClass
 };
 
 GType ipcam_message_get_type(void);
+IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str);
+gboolean ipcam_message_is_request(IpcamMessage *message);
+gboolean ipcam_message_is_response(IpcamMessage *message);
+gboolean ipcam_message_is_notice(IpcamMessage *message);
+const gchar *ipcam_message_to_string(IpcamMessage *message);
 
 #endif /* __MESSAGE_H__ */
