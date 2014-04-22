@@ -16,6 +16,7 @@ lib_LTLIBRARIES = libipcam_base.la
 
 
 libipcam_base_la_SOURCES = \
+	utils.c \
 	message.c \
 	notice_message.c \
 	request_message.c \

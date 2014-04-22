@@ -117,7 +117,7 @@ static void ipcam_response_message_class_init(IpcamResponseMessageClass *klass)
         g_param_spec_string("message-code",
                             "Response message code",
                             "Set response message code",
-                            "", // default value
+                            "0", // default value
                             G_PARAM_READWRITE);
     
     g_object_class_install_properties(this_class, N_PROPERTIES, obj_properties);
