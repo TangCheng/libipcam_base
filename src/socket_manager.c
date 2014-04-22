@@ -45,7 +45,7 @@ static void destroy_notify(gpointer data)
 {
     IpcamSocketManagerHashValue *value = (IpcamSocketManagerHashValue *)data;
     g_free(value->name);
-    free(value);
+    g_free(value);
 }
 static void ipcam_socket_manager_init(IpcamSocketManager *self)
 {
@@ -66,7 +66,7 @@ gboolean ipcam_socket_manager_add(IpcamSocketManager *socket_manager,
                                   const void *mq_socket)
 {
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    IpcamSocketManagerHashValue *value = (IpcamSocketManagerHashValue *)malloc(sizeof(IpcamSocketManagerHashValue));
+    IpcamSocketManagerHashValue *value = g_new(IpcamSocketManagerHashValue, 1);
     g_return_val_if_fail(value, FALSE);
     value->name = g_strdup(name);
     value->mq_socket = (void *)mq_socket;
