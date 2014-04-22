@@ -220,8 +220,6 @@ IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
     }
     if (NULL != message)
     {
-        g_value_set_string(&val, type);
-        g_object_set_property(G_OBJECT(message), "message-type", &val);
         g_value_set_string(&val, ipcam_message_get_head_attr(json, "token"));
         g_object_set_property(G_OBJECT(message), "message-token", &val);
         g_value_set_string(&val, ipcam_message_get_head_attr(json, "version"));
