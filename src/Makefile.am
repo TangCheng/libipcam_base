@@ -21,6 +21,7 @@ libipcam_base_la_SOURCES = \
 	notice_message.c \
 	request_message.c \
 	response_message.c \
+	message_manager.c \
 	base_service.c \
 	socket_manager.c \
 	service.c \
@@ -37,6 +38,7 @@ include_HEADERS = \
 	notice_message.h \
 	request_message.h \
 	response_message.h \
+	message_manager.h \
 	base_service.h \
 	socket_manager.h \
 	service.h \
