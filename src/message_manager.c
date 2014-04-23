@@ -5,6 +5,7 @@ typedef struct _IpcamMessageManagerHashValue
 {
     gint time;
     guint timeout;
+    GObject *obj;
     MsgHandler callback;
 } IpcamMessageManagerHashValue;
 
@@ -48,6 +49,7 @@ static void ipcam_message_manager_class_init(IpcamMessageManagerClass *klass)
 }
 gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
                                         IpcamMessage *message,
+                                        GObject *obj,
                                         MsgHandler handler,
                                         guint timeout)
 {
@@ -62,6 +64,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
     hash_value *value = g_new(hash_value, 1);
     value->time = time((time_t *)NULL);
     value->timeout = timeout;
+    value->obj = obj;
     value->callback = handler;
 
     return g_hash_table_insert(priv->msg_hash, (gpointer)msg_id, (gpointer)value);
@@ -72,7 +75,7 @@ static void clear(gpointer key, gpointer value, gpointer user_data)
     gint now = *(gint *)user_data;
 
     if (now - val->time >= val->timeout)
-        val->callback(NULL, TRUE);
+        val->callback(val->obj, NULL, TRUE);
 }
 static gboolean remove(gpointer key, gpointer value, gpointer user_data)
 {
@@ -96,7 +99,7 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
 
     hash_value *value = (hash_value *)g_hash_table_lookup(priv->msg_hash, (gconstpointer)msg_id);
     assert(value);
-    value->callback(message, FALSE);
+    value->callback(value->obj, message, FALSE);
     
     g_hash_table_remove(priv->msg_hash, (gpointer)msg_id);
     

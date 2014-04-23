@@ -15,7 +15,7 @@
 typedef struct _IpcamMessageManager IpcamMessageManager;
 typedef struct _IpcamMessageManagerClass IpcamMessageManagerClass;
 
-typedef void (*MsgHandler)(IpcamMessage* msg, gboolean timeout);
+typedef void (*MsgHandler)(GObject *obj, IpcamMessage* msg, gboolean timeout);
 
 struct _IpcamMessageManager
 {
@@ -30,6 +30,7 @@ struct _IpcamMessageManagerClass
 GType ipcam_message_manager_get_type(void);
 gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
                                         IpcamMessage *message,
+                                        GObject *obj,
                                         MsgHandler handler,
                                         guint timeout);
 gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, IpcamMessage *message);
