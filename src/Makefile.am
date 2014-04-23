@@ -17,7 +17,6 @@ lib_LTLIBRARIES = libipcam_base.la
 
 libipcam_base_la_SOURCES = \
 	utils.c \
-	poller.c \
 	message.c \
 	notice_message.c \
 	request_message.c \
@@ -35,7 +34,6 @@ libipcam_base_la_LIBADD = $(LIBIPCAM_BASE_LIBS)
 
 include_HEADERS = \
 	libipcam_base.h \
-	poller.h \
 	message.h \
 	notice_message.h \
 	request_message.h \

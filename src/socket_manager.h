@@ -4,6 +4,12 @@
 #include <glib.h>
 #include <glib-object.h>
 
+enum
+{
+     IPCAM_SOCKET_TYPE_SERVER = 0,
+     IPCAM_SOCKET_TYPE_CLIENT = 1,
+};
+     
 #define IPCAM_SOCKET_MANAGER_TYPE (ipcam_socket_manager_get_type())
 #define IPCAM_SOCKET_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), IPCAM_SOCKET_MANAGER_TYPE, IpcamSocketManager))
 #define IPCAM_SOCKET_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((klass), IPCAM_SOCKET_MANAGER_TYPE, IpcamSocketManagerClass))

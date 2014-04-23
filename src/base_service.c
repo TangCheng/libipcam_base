@@ -1,9 +1,8 @@
-#include <zmq.h>
+#include <czmq.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include "base_service.h"
-#include "poller.h"
 
 enum
 {
@@ -17,8 +16,8 @@ enum
 typedef struct _IpcamBaseServicePrivate
 {
     gchar* name;
-    void* mq_context;
-    IpcamPoller *poller;
+    zctx_t* mq_context;
+    zpoller_t *poller;
 } IpcamBaseServicePrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamBaseService, ipcam_base_service, G_TYPE_OBJECT);
@@ -43,8 +42,10 @@ static void ipcam_base_service_dispose(GObject *self)
     {
         first_run = FALSE;
         IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(IPCAM_BASE_SERVICE(self));
-        zmq_term(priv->mq_context);
-        g_object_unref(priv->poller);
+        zpoller_destroy(&priv->poller);
+        priv->poller = NULL;
+        zctx_destroy(&priv->mq_context);
+        priv->mq_context = NULL;
         G_OBJECT_CLASS(ipcam_base_service_parent_class)->dispose(self);
     }
 }
@@ -95,18 +96,24 @@ static void ipcam_base_service_set_property(GObject *object,
 static void ipcam_base_service_init(IpcamBaseService *self)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    priv->mq_context = zmq_ctx_new();
-    priv->poller = g_object_new(IPCAM_POLLER_TYPE, NULL);
+    priv->mq_context = zctx_new();
+    priv->poller = NULL;
 }
 static void ipcam_base_service_register_impl(IpcamBaseService *self, void *mq_socket)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    ipcam_poller_register(priv->poller, mq_socket, ZMQ_POLLIN);
+    if (priv->poller)
+    {
+        zpoller_add(priv->poller, mq_socket);
+    }
+    else
+    {
+        priv->poller = zpoller_new(mq_socket, NULL);
+    }
 }
 static void ipcam_base_service_unregister_impl(IpcamBaseService *self, void *mq_socket)
 {
-    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    ipcam_poller_unregister(priv->poller, mq_socket);
+    //IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
 }
 static void ipcam_base_service_before_start(IpcamBaseService *self)
 {
@@ -138,18 +145,19 @@ static void ipcam_base_service_on_read(IpcamBaseService *self, void *mq_socket)
 static void ipcam_base_service_do_poll(IpcamBaseService *self)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    gint rc = ipcam_poller_poll(priv->poller);
-    g_return_if_fail(rc != 0);
-    void **mq_sockets = NULL;
-    guint n = ipcam_poller_get_sockets(priv->poller, mq_sockets);
-    guint i = 0;
-    for (i = 0; i < n; i++)
+    if (priv->poller)
     {
-        ipcam_base_service_on_read(self, mq_sockets[i]);
+        void *which = zpoller_wait(priv->poller, -1);
+        assert(zpoller_expired(priv->poller) == false);
+        assert(zpoller_terminated(priv->poller) == false);
+        if (which)
+        {
+            ipcam_base_service_on_read(self, which);
+        }
     }
-    if (mq_sockets)
+    else
     {
-        g_free(mq_sockets);
+        zclock_sleep(1000);
     }
 }
 static void ipcam_base_service_start_impl(IpcamBaseService *self)
@@ -164,28 +172,30 @@ static void ipcam_base_service_start_impl(IpcamBaseService *self)
 static void ipcam_base_service_stop_impl(IpcamBaseService *self)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    zmq_term(priv->mq_context);
+    zpoller_destroy(&priv->poller);
+    priv->poller = NULL;
+    zctx_destroy(&priv->mq_context);
+    priv->mq_context = NULL;
 }
-static void *ipcam_base_service_bind_impl(IpcamBaseService *self, gchar *address)
+static void *ipcam_base_service_bind_impl(IpcamBaseService *self, const gchar *address)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     void *mq_socket = NULL;
-    mq_socket = zmq_socket(priv->mq_context, ZMQ_ROUTER);
+    mq_socket = zsocket_new(priv->mq_context, ZMQ_ROUTER);
     assert(mq_socket);
-    int rc = zmq_bind(mq_socket, address);
+    int rc = zsocket_bind(mq_socket, address);
     assert(rc == 0);
     ipcam_base_service_register_impl(self, mq_socket);
     return mq_socket;
 }
-static void *ipcam_base_service_connect_impl(IpcamBaseService *self, gchar *identity, gchar *address)
+static void *ipcam_base_service_connect_impl(IpcamBaseService *self, const gchar *identity, const gchar *address)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     void *mq_socket = NULL;
-    mq_socket = zmq_socket(priv->mq_context, ZMQ_DEALER);
+    mq_socket = zsocket_new(priv->mq_context, ZMQ_DEALER);
     assert(mq_socket);
-    int rc = zmq_setsockopt(mq_socket, ZMQ_IDENTITY, identity, strlen(identity));
-    assert(rc == 0);
-    rc = zmq_connect(mq_socket, address);
+    zsocket_set_identity(mq_socket, identity);
+    int rc = zsocket_connect(mq_socket, address);
     assert(rc == 0);
     ipcam_base_service_register_impl(self, mq_socket);
     return mq_socket;
@@ -230,13 +240,13 @@ void ipcam_base_service_stop(IpcamBaseService *base_service)
     IPCAM_BASE_SERVICE_GET_CLASS(base_service)->stop(base_service);
 }
 
-void* ipcam_base_service_bind(IpcamBaseService *base_service, gchar *address)
+void* ipcam_base_service_bind(IpcamBaseService *base_service, const gchar *address)
 {
     g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(base_service), NULL);
     return IPCAM_BASE_SERVICE_GET_CLASS(base_service)->bind(base_service, address);
 }
 
-void* ipcam_base_service_connect(IpcamBaseService *base_service, gchar *identity, gchar *address)
+void* ipcam_base_service_connect(IpcamBaseService *base_service, const gchar *identity, const gchar *address)
 {
     g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(base_service), NULL);
     return IPCAM_BASE_SERVICE_GET_CLASS(base_service)->connect(base_service, identity, address);

@@ -18,7 +18,7 @@ AC_PROG_CC
 LT_INIT
 
 
-PKG_CHECK_MODULES(LIBIPCAM_BASE, [libzmq gobject-2.0 json-c])
+PKG_CHECK_MODULES(LIBIPCAM_BASE, [libzmq libczmq gobject-2.0 json-c])
 
 
 

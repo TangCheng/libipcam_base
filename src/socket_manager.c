@@ -1,5 +1,5 @@
 #include "socket_manager.h"
-#include <zmq.h>
+#include <czmq.h>
 #include <assert.h>
 #include <stdlib.h>
 
@@ -147,7 +147,7 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
 static void iterator(gpointer key, gpointer value, gpointer user_data)
 {
     IpcamSocketManagerHashValue *item = (IpcamSocketManagerHashValue *)value;
-    zmq_close(item->mq_socket);
+    //zsocket_close(item->mq_socket);
 }
 void ipcam_socket_manager_close_all_socket(IpcamSocketManager *socket_manager)
 {
