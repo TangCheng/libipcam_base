@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <czmq.h>
 #include "service.h"
 #include "socket_manager.h"
 
@@ -54,6 +55,26 @@ static void ipcam_service_class_init(IpcamServiceClass *klass)
     IpcamBaseServiceClass *base_service_class = IPCAM_BASE_SERVICE_CLASS(klass);
     base_service_class->stop = &ipcam_service_stop_impl;
     base_service_class->on_read = &ipcam_service_on_read_impl;
+
+    klass->server_receive_string = NULL;
+    klass->client_receive_string = NULL;
+}
+static void ipcam_service_server_receive_string(IpcamService *self, const gchar *name, const gchar *client_id, const gchar *string)
+{
+    if (IPCAM_SERVICE_GET_CLASS(self)->server_receive_string != NULL)
+        IPCAM_SERVICE_GET_CLASS(self)->server_receive_string(self, name, client_id, string);
+    else
+        g_warning ("Class '%s' does not override the mandatory "
+                   "IpcamServiceClass.server_receive_string() virtual function.",
+                   G_OBJECT_TYPE_NAME(self));
+}static void ipcam_service_client_receive_string(IpcamService *self, const gchar *name, const gchar *string)
+{
+    if (IPCAM_SERVICE_GET_CLASS(self)->client_receive_string != NULL)
+        IPCAM_SERVICE_GET_CLASS(self)->client_receive_string(self, name, string);
+    else
+        g_warning ("Class '%s' does not override the mandatory "
+                   "IpcamServiceClass.client_receive_string() virtual function.",
+                   G_OBJECT_TYPE_NAME(self));
 }
 static void ipcam_service_stop_impl(IpcamService *service)
 {
@@ -69,6 +90,8 @@ static void ipcam_service_stop_impl(IpcamService *service)
 static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
 {
     gchar *name = NULL;
+    gchar *string = NULL;
+    gchar *client_id = NULL;
     gint type;
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
     ipcam_socket_manager_get_by_socket(priv->socket_manager, mq_socket, name, &type);
@@ -77,16 +100,23 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
     switch(type)
     {
     case IPCAM_SOCKET_TYPE_SERVER:
-        // ToDo
+        client_id = zstr_recv(mq_socket);
+        string = zstr_recv(mq_socket);
+        ipcam_service_server_receive_string(service, name, client_id, string);
         break;
     case IPCAM_SOCKET_TYPE_CLIENT:
-        // ToDo
+        string = zstr_recv(mq_socket);
+        ipcam_service_client_receive_string(service, name, string);
         break;
-    defalut:
+    default:
         break;
     }
     
     g_free(name);
+    if (string)
+        g_free(string);
+    if (client_id)
+        g_free(client_id);
 
     IpcamBaseServiceClass *parent_class = g_type_class_peek_parent(IPCAM_SERVICE_GET_CLASS(service));
     if (parent_class->on_read)
@@ -94,5 +124,61 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
         parent_class->on_read(IPCAM_BASE_SERVICE(service), mq_socket);
     }
 }
+gboolean ipcam_service_send_string(IpcamService *service, const gchar *name, const gchar *string, const gchar *client_id)
+{
+    gboolean ret = FALSE;
+    gint type;
+    void *mq_socket = NULL;
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
+    g_return_val_if_fail(ipcam_socket_manager_get_by_name(priv->socket_manager, name, &type, &mq_socket), FALSE);
+    switch(type)
+    {
+    case IPCAM_SOCKET_TYPE_SERVER:
+        g_return_val_if_fail(client_id, FALSE);
+        zstr_send(mq_socket, client_id);
+        zstr_send(mq_socket, string);
+        ret = TRUE;
+        break;
+    case IPCAM_SOCKET_TYPE_CLIENT:
+        zstr_send(mq_socket, string);
+        ret = TRUE;
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+gboolean ipcam_service_is_server(IpcamService *service, const gchar *name)
+{
+    gint type;
+    void *mq_socket = NULL;
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
+    g_return_val_if_fail(ipcam_socket_manager_get_by_name(priv->socket_manager, name, &type, &mq_socket), FALSE);
+    return type == IPCAM_SOCKET_TYPE_SERVER;
+}
+gboolean ipcam_service_is_client(IpcamService *service, const gchar *name)
+{
+    gint type;
+    void *mq_socket = NULL;
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
+    g_return_val_if_fail(ipcam_socket_manager_get_by_name(priv->socket_manager, name, &type, &mq_socket), FALSE);
+    return type == IPCAM_SOCKET_TYPE_CLIENT;
+}
+gboolean ipcam_service_connect_by_name(IpcamService *service, const gchar *name, const gchar *address, const gchar *client_id)
+{
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
+    g_return_val_if_fail(ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
+    void *mq_socket = ipcam_base_service_connect(IPCAM_BASE_SERVICE(service), client_id, address);
+    return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_CLIENT, mq_socket);
+}
+gboolean ipcam_service_bind_by_name(IpcamService *service, const gchar *name, const gchar *address)
+{
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
+    g_return_val_if_fail(ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
+    void *mq_socket = ipcam_base_service_bind(IPCAM_BASE_SERVICE(service), address);
+    return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_SERVER, mq_socket);
+}
+
+
 
 
