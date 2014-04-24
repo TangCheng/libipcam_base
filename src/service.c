@@ -94,7 +94,7 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
     gchar *client_id = NULL;
     gint type;
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
-    ipcam_socket_manager_get_by_socket(priv->socket_manager, mq_socket, name, &type);
+    ipcam_socket_manager_get_by_socket(priv->socket_manager, mq_socket, &name, &type);
     g_return_if_fail(name);
 
     switch(type)
@@ -102,10 +102,12 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
     case IPCAM_SOCKET_TYPE_SERVER:
         client_id = zstr_recv(mq_socket);
         string = zstr_recv(mq_socket);
+        g_print("server received: %s-%s\n", client_id, string);
         ipcam_service_server_receive_string(service, name, client_id, string);
         break;
     case IPCAM_SOCKET_TYPE_CLIENT:
         string = zstr_recv(mq_socket);
+        g_print("client received: %s\n", string);
         ipcam_service_client_receive_string(service, name, string);
         break;
     default:
@@ -167,14 +169,14 @@ gboolean ipcam_service_is_client(IpcamService *service, const gchar *name)
 gboolean ipcam_service_connect_by_name(IpcamService *service, const gchar *name, const gchar *address, const gchar *client_id)
 {
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
-    g_return_val_if_fail(ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
+    g_return_val_if_fail(!ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
     void *mq_socket = ipcam_base_service_connect(IPCAM_BASE_SERVICE(service), client_id, address);
     return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_CLIENT, mq_socket);
 }
 gboolean ipcam_service_bind_by_name(IpcamService *service, const gchar *name, const gchar *address)
 {
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
-    g_return_val_if_fail(ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
+    g_return_val_if_fail(!ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
     void *mq_socket = ipcam_base_service_bind(IPCAM_BASE_SERVICE(service), address);
     return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_SERVER, mq_socket);
 }

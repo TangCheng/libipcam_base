@@ -148,8 +148,8 @@ static void ipcam_base_service_do_poll(IpcamBaseService *self)
     if (priv->poller)
     {
         void *which = zpoller_wait(priv->poller, -1);
-        assert(zpoller_expired(priv->poller) == false);
-        assert(zpoller_terminated(priv->poller) == false);
+        g_return_if_fail(!zpoller_expired(priv->poller));
+        g_return_if_fail(!zpoller_terminated(priv->poller));
         if (which)
         {
             ipcam_base_service_on_read(self, which);
@@ -184,7 +184,6 @@ static void *ipcam_base_service_bind_impl(IpcamBaseService *self, const gchar *a
     mq_socket = zsocket_new(priv->mq_context, ZMQ_ROUTER);
     assert(mq_socket);
     int rc = zsocket_bind(mq_socket, address);
-    assert(rc == 0);
     ipcam_base_service_register_impl(self, mq_socket);
     return mq_socket;
 }

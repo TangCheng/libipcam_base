@@ -128,7 +128,7 @@ gboolean ipcam_socket_manager_get_by_name(IpcamSocketManager *socket_manager,
 }
 gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
                                             const void *mq_socket,
-                                            gchar *name,
+                                            gchar **name,
                                             int *type)
 {
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
@@ -139,7 +139,7 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
     if (NULL != value)
     {
         *type = value->type;
-        name = g_strdup(value->name);
+        *name = g_strdup(value->name);
         ret = TRUE;
     }
     return ret;

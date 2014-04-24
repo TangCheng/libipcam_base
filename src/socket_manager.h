@@ -37,7 +37,7 @@ gboolean ipcam_socket_manager_delete_by_name(IpcamSocketManager *socket_manager,
 gboolean ipcam_socket_manager_has_name(IpcamSocketManager *socket_manager, const gchar *name);
 gboolean ipcam_socket_manager_has_socket(IpcamSocketManager *socket_manager, const void *mq_socket);
 gboolean ipcam_socket_manager_get_by_name(IpcamSocketManager *socket_manager, const gchar *name, int *type, void **mq_socket);
-gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager, const void *mq_socket, gchar *name, int *type);
+gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager, const void *mq_socket, gchar **name, int *type);
 void ipcam_socket_manager_close_all_socket(IpcamSocketManager *socket_manager);
 
 #endif /* __SOCKET_MANAGER_H__ */
