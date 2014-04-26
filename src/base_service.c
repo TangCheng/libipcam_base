@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include "base_service.h"
 
+#define TIMEOUT_PERIOD    500 /* millsecond */
+
 enum
 {
     PROP_0,
@@ -147,8 +149,8 @@ static void ipcam_base_service_do_poll(IpcamBaseService *self)
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     if (priv->poller)
     {
-        void *which = zpoller_wait(priv->poller, -1);
-        g_return_if_fail(!zpoller_expired(priv->poller));
+        void *which = zpoller_wait(priv->poller, TIMEOUT_PERIOD);
+        //g_return_if_fail(!zpoller_expired(priv->poller));
         g_return_if_fail(!zpoller_terminated(priv->poller));
         if (which)
         {
@@ -157,7 +159,7 @@ static void ipcam_base_service_do_poll(IpcamBaseService *self)
     }
     else
     {
-        zclock_sleep(1000);
+        zclock_sleep(TIMEOUT_PERIOD);
     }
 }
 static void ipcam_base_service_start_impl(IpcamBaseService *self)
