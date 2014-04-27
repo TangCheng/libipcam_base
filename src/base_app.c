@@ -1,6 +1,17 @@
-#include "base_app.h"
 
-G_DEFINE_TYPE(IpcamBaseApp, ipcam_base_app, IPCAM_SERVICE_TYPE);
+#include "base_app.h"
+#include "timer_manager.h"
+#include "message_manager.h"
+
+#define IPCAM_TIMER_CLIENT_NAME "_timer_client"
+
+typedef struct _IpcamBaseAppPrivate
+{
+    IpcamTimerManager *timer_manager;
+    IpcamMessageManager *msg_manager;
+} IpcamBaseAppPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE(IpcamBaseApp, ipcam_base_app, IPCAM_SERVICE_TYPE);
 
 static GObject *ipcam_base_app_constructor(GType self_type,
                                            guint n_properties,
