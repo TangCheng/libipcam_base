@@ -27,8 +27,7 @@ libipcam_base_la_SOURCES = \
 	socket_manager.c \
 	service.c \
 	timer_pump.c \
-	base_app.c \
-	app.c
+	base_app.c
 
 libipcam_base_la_LDFLAGS = 
 
@@ -46,8 +45,7 @@ include_HEADERS = \
 	socket_manager.h \
 	service.h \
 	timer_pump.h \
-	base_app.h \
-	app.h
+	base_app.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libipcam_base-0.1.0.pc.in
