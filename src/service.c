@@ -102,23 +102,20 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
     case IPCAM_SOCKET_TYPE_SERVER:
         client_id = zstr_recv(mq_socket);
         string = zstr_recv(mq_socket);
-        g_print("server received: %s-%s\n", client_id, string);
         ipcam_service_server_receive_string(service, name, client_id, string);
         break;
     case IPCAM_SOCKET_TYPE_CLIENT:
         string = zstr_recv(mq_socket);
-        g_print("client received: %s\n", string);
         ipcam_service_client_receive_string(service, name, string);
         break;
     default:
+        g_print("unkonw type\n");
         break;
     }
     
     g_free(name);
-    if (string)
-        g_free(string);
-    if (client_id)
-        g_free(client_id);
+    zstr_free(&string);
+    zstr_free(&client_id);
 
     IpcamBaseServiceClass *parent_class = g_type_class_peek_parent(IPCAM_SERVICE_GET_CLASS(service));
     if (parent_class->on_read)
@@ -126,7 +123,21 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
         parent_class->on_read(IPCAM_BASE_SERVICE(service), mq_socket);
     }
 }
-gboolean ipcam_service_send_string(IpcamService *service, const gchar *name, const gchar *string, const gchar *client_id)
+static gint zmq_send_strings(void *socket, const gchar *strings[])
+{
+    zmsg_t *msg = zmsg_new();
+    gint i = 0;
+    while (strings[i])
+    {
+        zmsg_addstr(msg, strings[i]);
+        i++;
+    }
+    return zmsg_send(&msg, socket);
+}
+gboolean ipcam_service_send_strings(IpcamService *service,
+                                    const gchar *name,
+                                    const gchar *strings[],
+                                    const gchar *client_id)
 {
     gboolean ret = FALSE;
     gint type;
@@ -137,12 +148,12 @@ gboolean ipcam_service_send_string(IpcamService *service, const gchar *name, con
     {
     case IPCAM_SOCKET_TYPE_SERVER:
         g_return_val_if_fail(client_id, FALSE);
-        zstr_send(mq_socket, client_id);
-        zstr_send(mq_socket, string);
+        zstr_sendm(mq_socket, client_id);
+        zmq_send_strings(mq_socket, strings);
         ret = TRUE;
         break;
     case IPCAM_SOCKET_TYPE_CLIENT:
-        zstr_send(mq_socket, string);
+        zmq_send_strings(mq_socket, strings);
         ret = TRUE;
         break;
     default:
@@ -166,7 +177,10 @@ gboolean ipcam_service_is_client(IpcamService *service, const gchar *name)
     g_return_val_if_fail(ipcam_socket_manager_get_by_name(priv->socket_manager, name, &type, &mq_socket), FALSE);
     return type == IPCAM_SOCKET_TYPE_CLIENT;
 }
-gboolean ipcam_service_connect_by_name(IpcamService *service, const gchar *name, const gchar *address, const gchar *client_id)
+gboolean ipcam_service_connect_by_name(IpcamService *service,
+                                       const gchar *name,
+                                       const gchar *address,
+                                       const gchar *client_id)
 {
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
     g_return_val_if_fail(!ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);

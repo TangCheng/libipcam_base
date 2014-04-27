@@ -26,10 +26,16 @@ struct _IpcamServiceClass {
 };
 
 GType ipcam_service_get_type(void);
-gboolean ipcam_service_send_string(IpcamService *service, const gchar *name, const gchar *string, const gchar *client_id);
+gboolean ipcam_service_send_strings(IpcamService *service,
+                                    const gchar *name,
+                                    const gchar *strings[],
+                                    const gchar *client_id);
 gboolean ipcam_service_is_server(IpcamService *service, const gchar *name);
 gboolean ipcam_service_is_client(IpcamService *service, const gchar *name);
-gboolean ipcam_service_connect_by_name(IpcamService *service, const gchar *name, const gchar *address, const gchar *client_id);
+gboolean ipcam_service_connect_by_name(IpcamService *service,
+                                       const gchar *name,
+                                       const gchar *address,
+                                       const gchar *client_id);
 gboolean ipcam_service_bind_by_name(IpcamService *service, const gchar *name, const gchar *address);
 
 #endif /* __SERVICE_H__*/
