@@ -8,11 +8,15 @@ LDADD = $(top_builddir)/src/libipcam_base.la \
 
 noinst_PROGRAMS =  \
 	test_service \
+	test_timer_pump \
 	test_notice_message \
 	test_request_message 
 
 test_service_SOURCES =  \
 	test_service.c
+
+test_timer_pump_SOURCES = \
+	test_timer_pump.c
 
 test_notice_message_SOURCES =  \
 	test_notice_message.c

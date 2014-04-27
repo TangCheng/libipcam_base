@@ -25,6 +25,7 @@ libipcam_base_la_SOURCES = \
 	base_service.c \
 	socket_manager.c \
 	service.c \
+	timer_pump.c \
 	base_app.c \
 	app.c
 
@@ -42,6 +43,7 @@ include_HEADERS = \
 	base_service.h \
 	socket_manager.h \
 	service.h \
+	timer_pump.h \
 	base_app.h \
 	app.h
 
