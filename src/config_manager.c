@@ -53,16 +53,23 @@ void ipcam_config_manager_merge(IpcamConfigManager *config_manager, const gchar 
 {
     g_return_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager));
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    if (!g_hash_table_contains(priv->conf_hash, conf_name))
+    gchar *key = g_new(gchar, PATH_MAX);
+    sprintf(key, "%s:%s", "config", conf_name);
+    if (!g_hash_table_contains(priv->conf_hash, key))
     {
-        g_hash_table_insert(priv->conf_hash, (gpointer)conf_name, (gpointer)conf_value);
+        g_hash_table_insert(priv->conf_hash, (gpointer)key, (gpointer)conf_value);
     }
+    g_free(key);
 }
 gchar *ipcam_config_manager_get(IpcamConfigManager *config_manager, const gchar *conf_name)
 {
-    g_return_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager));
+    g_return_val_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager), NULL);
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    return (gchar *)g_hash_table_lookup(priv->conf_hash, conf_name);
+    gchar *key = g_new(gchar, PATH_MAX);
+    sprintf(key, "%s:%s", "config", conf_name);
+    gchar *ret = g_hash_table_lookup(priv->conf_hash, key);
+    g_free(key);
+    return ret;
 }
 
 enum storage_flags { VAR, VAL, SEQ }; // "Store as" switch
