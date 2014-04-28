@@ -9,7 +9,7 @@ typedef struct _IpcamConfigManagerPrivate
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamConfigManager, ipcam_config_manager, G_TYPE_OBJECT);
 
 static void process_layer(yaml_parser_t *parser, GNode *data);
-static gboolean dump(GNode *n, gpointer data);
+static gboolean to_hash(GNode *n, gpointer data);
 
 static void ipcam_config_manager_dispose(GObject *self)
 {
@@ -34,6 +34,7 @@ static void ipcam_config_manager_class_init(IpcamConfigManagerClass *klass)
 }
 gboolean ipcam_config_manager_load_config(IpcamConfigManager *config_manager, const gchar *file_path)
 {
+    g_return_val_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager), FALSE);
     GNode *cfg = g_node_new("config");
     yaml_parser_t parser;
 
@@ -44,18 +45,25 @@ gboolean ipcam_config_manager_load_config(IpcamConfigManager *config_manager, co
     yaml_parser_delete(&parser);
     fclose(source);
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    g_node_traverse(cfg, G_PRE_ORDER, G_TRAVERSE_ALL, -1, dump, (gpointer)priv);
+    g_node_traverse(cfg, G_PRE_ORDER, G_TRAVERSE_ALL, -1, to_hash, (gpointer)priv);
     g_node_destroy(cfg);
     return TRUE;
 }
-void ipcam_config_manager_merge(IpcamConfigManager *config_manager, GHashTable *options)
+void ipcam_config_manager_merge(IpcamConfigManager *config_manager, const gchar *conf_name, const gchar *conf_value)
 {
+    g_return_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager));
+    IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
+    if (!g_hash_table_contains(priv->conf_hash, conf_name))
+    {
+        g_hash_table_insert(priv->conf_hash, (gpointer)conf_name, (gpointer)conf_value);
+    }
 }
 gchar *ipcam_config_manager_get(IpcamConfigManager *config_manager, const gchar *conf_name)
 {
-    return NULL;
+    g_return_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager));
+    IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
+    return (gchar *)g_hash_table_lookup(priv->conf_hash, conf_name);
 }
-
 
 enum storage_flags { VAR, VAL, SEQ }; // "Store as" switch
 
@@ -104,7 +112,7 @@ static void process_layer(yaml_parser_t *parser, GNode *data)
     } while (type != YAML_MAPPING_END_EVENT && type != YAML_STREAM_END_EVENT);
 }
 
-static gboolean dump(GNode *node, gpointer data) {
+static gboolean to_hash(GNode *node, gpointer data) {
     IpcamConfigManagerPrivate *priv = (IpcamConfigManagerPrivate *)data;
     gchar key[PATH_MAX] = {0};
     int i = g_node_depth(node) - 1;
