@@ -1,5 +1,5 @@
 #ifndef __ACTION_HANDLER_H__
-#define __ACRION_HANDLER_H__
+#define __ACTION_HANDLER_H__
 
 #include <glib.h>
 #include <glib-object.h>
