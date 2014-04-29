@@ -2,6 +2,8 @@
 #define __BASE_APP_H__
 
 #include "service.h"
+#include "message.h"
+#include "message_manager.h"
 
 #define IPCAM_BASE_APP_TYPE (ipcam_service_get_type())
 #define IPCAM_BASE_APP(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), IPCAM_BASE_APP_TYPE, IpcamBaseApp))
@@ -27,5 +29,11 @@ GType ipcam_base_app_get_type(void);
 void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
                                      const gchar *handler_name,
                                      GType handler_class_type);
+void ipcam_base_app_send_message(IpcamBaseApp *base_app,
+                                 IpcamMessage *msg,
+                                 const gchar *name,
+                                 const gchar *client_id,
+                                 MsgHandler callback,
+                                 guint timeout);
 
 #endif /* __BASE_APP_H__*/

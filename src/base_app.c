@@ -2,7 +2,6 @@
 #include "base_app.h"
 #include "config_manager.h"
 #include "timer_manager.h"
-#include "message_manager.h"
 #include "timer_pump.h"
 #include "socket_manager.h"
 #include "action_handler.h"
@@ -237,4 +236,28 @@ void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     g_return_if_fail(!g_hash_table_contains(priv->handler_hash, (gpointer)handler_name));
     g_hash_table_insert(priv->handler_hash, (gpointer)handler_name, (gpointer)handler_class_type);
+}
+void ipcam_base_app_send_message(IpcamBaseApp *base_app,
+                                 IpcamMessage *msg,
+                                 const gchar *name,
+                                 const gchar *client_id,
+                                 MsgHandler callback,
+                                 guint timeout)
+{
+    g_return_if_fail(IPCAM_IS_BASE_APP(base_app));
+    g_return_if_fail(IPCAM_IS_MESSAGE(msg));
+    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
+    gboolean is_server = ipcam_service_is_server(IPCAM_SERVICE(base_app), name);
+    gchar *token = "";
+    if (!is_server)
+    {
+        token = ipcam_config_manager_get(priv->config_manager, "token");
+    }
+    g_object_set(G_OBJECT(msg), "token", token, NULL);
+    ipcam_message_manager_register(priv->msg_manager, msg, G_OBJECT(base_app), callback, timeout);
+    const gchar **strings = (const gchar **)g_new(gpointer, 2);
+    strings[0] = ipcam_message_to_string(msg);
+    strings[1] = NULL;
+    ipcam_service_send_strings(IPCAM_SERVICE(base_app), name, strings, client_id);
+    g_free(strings);
 }
