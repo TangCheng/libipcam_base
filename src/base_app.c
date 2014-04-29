@@ -203,10 +203,10 @@ static void ipcam_base_app_action_handler(IpcamBaseApp *base_app, IpcamMessage *
     action_handler_class_type = (GType)g_hash_table_lookup(priv->handler_hash, (gpointer)strval);
     if (G_TYPE_INVALID != action_handler_class_type)
     {
-        IpcamActionHandler *handler = g_object_new(action_handler_class_type, NULL);
+        IpcamActionHandler *handler = g_object_new(action_handler_class_type, "service", base_app, NULL);
         if (IPCAM_IS_ACTION_HANDLER(handler))
         {
-            ipcam_action_handler_run(handler, IPCAM_SERVICE(base_app), msg);
+            ipcam_action_handler_run(handler, msg);
         }
         g_object_unref(handler);
     }

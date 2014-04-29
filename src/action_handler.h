@@ -24,11 +24,11 @@ struct _IpcamActionHandler
 struct _IpcamActionHandlerClass
 {
     GObjectClass parent_class;
+     void (*run)(IpcamActionHandler *action_handler, IpcamMessage *message);
 };
 
 GType ipcam_action_handler_get_type(void);
 void ipcam_action_handler_run(IpcamActionHandler *action_handler,
-                              IpcamService *service,
                               IpcamMessage *message);
 
 #endif /* __ACTION_HANDLER_H__ */
