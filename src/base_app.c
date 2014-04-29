@@ -6,6 +6,7 @@
 #include "timer_pump.h"
 #include "socket_manager.h"
 #include "action_handler.h"
+#include "event_handler.h"
 
 #define IPCAM_TIMER_CLIENT_NAME "_timer_client"
 
@@ -213,6 +214,20 @@ static void ipcam_base_app_action_handler(IpcamBaseApp *base_app, IpcamMessage *
 }
 static void ipcam_base_app_notice_handler(IpcamBaseApp *base_app, IpcamMessage *msg)
 {
+    GType event_handler_class_type = G_TYPE_INVALID;
+    gchar *strval;
+    g_object_get(G_OBJECT(msg), "message-event", &strval, NULL);
+    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
+    event_handler_class_type = (GType)g_hash_table_lookup(priv->handler_hash, (gpointer)strval);
+    if (G_TYPE_INVALID != event_handler_class_type)
+    {
+        IpcamEventHandler *handler = g_object_new(event_handler_class_type, "service", base_app, NULL);
+        if (IPCAM_IS_EVENT_HANDLER(handler))
+        {
+            ipcam_event_handler_run(handler, msg);
+        }
+        g_object_unref(handler);
+    }
 }
 void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
                                     const gchar *handler_name,
