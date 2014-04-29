@@ -216,7 +216,7 @@ static void ipcam_base_service_class_init(IpcamBaseServiceClass *klass)
     this_class->get_property = &ipcam_base_service_get_property;
 
     obj_properties[IPCAM_BASE_SERVICE_CONSTRUCT_NAME] =
-        g_param_spec_string("service-name",
+        g_param_spec_string("name",
                             "Service construct property",
                             "Set service name",
                             "noname", // default value

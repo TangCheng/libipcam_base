@@ -58,7 +58,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
 
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
     gchar *msg_id;
-    g_object_get(G_OBJECT(message), "message-id", &msg_id, NULL);
+    g_object_get(G_OBJECT(message), "id", &msg_id, NULL);
     g_return_val_if_fail(!g_hash_table_contains(priv->msg_hash, msg_id), FALSE);
 
     hash_value *value = g_new(hash_value, 1);
@@ -94,7 +94,7 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
 
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
     gchar *msg_id;
-    g_object_get(G_OBJECT(message), "message-id", &msg_id, NULL);
+    g_object_get(G_OBJECT(message), "id", &msg_id, NULL);
     g_return_val_if_fail(g_hash_table_contains(priv->msg_hash, msg_id), FALSE);
 
     hash_value *value = (hash_value *)g_hash_table_lookup(priv->msg_hash, (gconstpointer)msg_id);

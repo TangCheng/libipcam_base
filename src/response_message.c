@@ -89,7 +89,7 @@ static void ipcam_response_message_set_property(GObject *object,
 }
 static void ipcam_response_message_init(IpcamResponseMessage *self)
 {
-    g_object_set(G_OBJECT(self), "message-type", "response", NULL);
+    g_object_set(G_OBJECT(self), "type", "response", NULL);
 }
 static void ipcam_response_message_class_init(IpcamResponseMessageClass *klass)
 {
@@ -99,19 +99,19 @@ static void ipcam_response_message_class_init(IpcamResponseMessageClass *klass)
     this_class->set_property = &ipcam_response_message_set_property;
 
     obj_properties[IPCAM_RESPONSE_MESSAGE_ACTION] =
-        g_param_spec_string("message-action",
+        g_param_spec_string("action",
                             "Response message action",
                             "Set response message action",
                             "", // default value
                             G_PARAM_READWRITE);
     obj_properties[IPCAM_RESPONSE_MESSAGE_ID] =
-        g_param_spec_string("message-id",
+        g_param_spec_string("id",
                             "Response message id",
                             "Set response message id",
                             "", // default value
                             G_PARAM_READWRITE);
     obj_properties[IPCAM_RESPONSE_MESSAGE_CODE] =
-        g_param_spec_string("message-code",
+        g_param_spec_string("code",
                             "Response message code",
                             "Set response message code",
                             "0", // default value

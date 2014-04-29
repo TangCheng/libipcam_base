@@ -78,7 +78,7 @@ static void ipcam_request_message_init(IpcamRequestMessage *self)
 {
     gchar message_id[17] = {0};
     ipcam_get_rand_str(message_id, 16);
-    g_object_set(G_OBJECT(self), "message-type", "request", "message-id", message_id, NULL);
+    g_object_set(G_OBJECT(self), "type", "request", "id", message_id, NULL);
 }
 static void ipcam_request_message_class_init(IpcamRequestMessageClass *klass)
 {
@@ -88,13 +88,13 @@ static void ipcam_request_message_class_init(IpcamRequestMessageClass *klass)
     this_class->set_property = &ipcam_request_message_set_property;
 
     obj_properties[IPCAM_REQUEST_MESSAGE_ACTION] =
-        g_param_spec_string("message-action",
+        g_param_spec_string("action",
                             "Request message action",
                             "Set request message action",
                             "", // default value
                             G_PARAM_READWRITE);
     obj_properties[IPCAM_REQUEST_MESSAGE_ID] =
-        g_param_spec_string("message-id",
+        g_param_spec_string("id",
                             "Request message id",
                             "Set request message id",
                             "", // default value
@@ -106,9 +106,9 @@ IpcamMessage *ipcam_request_message_get_response_message(IpcamRequestMessage *re
 {
     IpcamRequestMessagePrivate *priv = ipcam_request_message_get_instance_private(request_message);
     IpcamMessage *message = g_object_new(IPCAM_RESPONSE_MESSAGE_TYPE,
-                                         "message-action", priv->action,
-                                         "message-id", priv->id,
-                                         "message-code", code,
+                                         "action", priv->action,
+                                         "id", priv->id,
+                                         "code", code,
                                          NULL);
     return message;
 }

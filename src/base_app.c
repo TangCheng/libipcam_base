@@ -168,7 +168,7 @@ static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
         if (type == IPCAM_SOCKET_TYPE_SERVER)
         {
             gchar *strval;
-            g_object_get(G_OBJECT(msg), "message-token", &strval, NULL);
+            g_object_get(G_OBJECT(msg), "token", &strval, NULL);
             if (0 != strcmp(client_id, strval))
             {
                 g_object_unref(msg);
@@ -199,7 +199,7 @@ static void ipcam_base_app_action_handler(IpcamBaseApp *base_app, IpcamMessage *
 {
     GType action_handler_class_type = G_TYPE_INVALID;
     gchar *strval;
-    g_object_get(G_OBJECT(msg), "message-action", &strval, NULL);
+    g_object_get(G_OBJECT(msg), "action", &strval, NULL);
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     action_handler_class_type = (GType)g_hash_table_lookup(priv->handler_hash, (gpointer)strval);
     if (G_TYPE_INVALID != action_handler_class_type)
@@ -216,7 +216,7 @@ static void ipcam_base_app_notice_handler(IpcamBaseApp *base_app, IpcamMessage *
 {
     GType event_handler_class_type = G_TYPE_INVALID;
     gchar *strval;
-    g_object_get(G_OBJECT(msg), "message-event", &strval, NULL);
+    g_object_get(G_OBJECT(msg), "event", &strval, NULL);
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     event_handler_class_type = (GType)g_hash_table_lookup(priv->handler_hash, (gpointer)strval);
     if (G_TYPE_INVALID != event_handler_class_type)
