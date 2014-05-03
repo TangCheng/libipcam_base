@@ -137,9 +137,9 @@ static void ipcam_message_set_property(GObject *object,
 static void ipcam_message_init(IpcamMessage *self)
 {
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(self);
-    priv->type = NULL;
-    priv->token = NULL;
-    priv->version = NULL;
+    priv->type = g_strdup("");
+    priv->token = g_strdup("");
+    priv->version = g_strdup("1.0");
     priv->body = NULL;
 }
 static void ipcam_message_class_init(IpcamMessageClass *klass)
@@ -261,28 +261,29 @@ const gchar *ipcam_message_to_string(IpcamMessage *message)
     json_object *jobj = json_object_new_object();
     json_object *jobj_head = json_object_new_object();
     assert(jobj);
+    assert(jobj_head);
+    gchar *strval = NULL;
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(message);
     json_object_object_add(jobj_head, "type", json_object_new_string(priv->type));
+    assert(priv->token);
     json_object_object_add(jobj_head, "token", json_object_new_string(priv->token));
+    assert(priv->version);
     json_object_object_add(jobj_head, "version", json_object_new_string(priv->version));
 
     if (ipcam_message_is_notice(message))
     {
-        gchar *strval;
         g_object_get(G_OBJECT(message), "event", &strval, NULL);
         json_object_object_add(jobj_head, "event", json_object_new_string(strval));
     }
     else if (ipcam_message_is_request(message))
     {
-        gchar *strval;
         g_object_get(G_OBJECT(message), "action", &strval, NULL);
         json_object_object_add(jobj_head, "action", json_object_new_string(strval));
         g_object_get(G_OBJECT(message), "id", &strval, NULL);
         json_object_object_add(jobj_head, "id", json_object_new_string(strval));
     }
-    else if (ipcam_message_is_notice(message))
+    else if (ipcam_message_is_response(message))
     {
-        gchar *strval;
         g_object_get(G_OBJECT(message), "action", &strval, NULL);
         json_object_object_add(jobj_head, "action", json_object_new_string(strval));
         g_object_get(G_OBJECT(message), "id", &strval, NULL);
@@ -297,8 +298,6 @@ const gchar *ipcam_message_to_string(IpcamMessage *message)
     }
 
     json_object_object_add(jobj, "head", jobj_head);
-    json_object_put(jobj_head);
-
     json_object_object_add(jobj, "body", priv->body);
     
     return json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_PLAIN);

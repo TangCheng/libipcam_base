@@ -60,7 +60,7 @@ static void ipcam_notice_message_set_property(GObject *object,
 }
 static void ipcam_notice_message_init(IpcamNoticeMessage *self)
 {
-    g_object_set(G_OBJECT(self), "type", "notice", NULL);
+    g_object_set(G_OBJECT(self), "type", "notice", "event", "", NULL);
 }
 static void ipcam_notice_message_class_init(IpcamNoticeMessageClass *klass)
 {

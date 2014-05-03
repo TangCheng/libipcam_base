@@ -78,7 +78,7 @@ static void ipcam_request_message_init(IpcamRequestMessage *self)
 {
     gchar message_id[17] = {0};
     ipcam_get_rand_str(message_id, 16);
-    g_object_set(G_OBJECT(self), "type", "request", "id", message_id, NULL);
+    g_object_set(G_OBJECT(self), "type", "request", "id", message_id, "action", "", NULL);
 }
 static void ipcam_request_message_class_init(IpcamRequestMessageClass *klass)
 {

@@ -89,7 +89,7 @@ static void ipcam_response_message_set_property(GObject *object,
 }
 static void ipcam_response_message_init(IpcamResponseMessage *self)
 {
-    g_object_set(G_OBJECT(self), "type", "response", NULL);
+    g_object_set(G_OBJECT(self), "type", "response", "action", "", "id", "", "code", "", NULL);
 }
 static void ipcam_response_message_class_init(IpcamResponseMessageClass *klass)
 {
