@@ -42,6 +42,7 @@ include_HEADERS = \
 	notice_message.h \
 	request_message.h \
 	response_message.h \
+	messages.h \
 	message_manager.h \
 	timer_manager.h \
 	base_service.h \
