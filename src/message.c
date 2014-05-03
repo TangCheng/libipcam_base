@@ -45,7 +45,10 @@ static void ipcam_message_dispose(GObject *self)
         g_free(priv->type);
         g_free(priv->token);
         g_free(priv->version);
-        g_free(priv->body);
+        if (priv->body)
+        {
+            json_object_put(priv->body);
+        }
         G_OBJECT_CLASS(ipcam_message_parent_class)->dispose(self);
     }
 }
@@ -274,22 +277,28 @@ const gchar *ipcam_message_to_string(IpcamMessage *message)
     {
         g_object_get(G_OBJECT(message), "event", &strval, NULL);
         json_object_object_add(jobj_head, "event", json_object_new_string(strval));
+        g_free(strval);
     }
     else if (ipcam_message_is_request(message))
     {
         g_object_get(G_OBJECT(message), "action", &strval, NULL);
         json_object_object_add(jobj_head, "action", json_object_new_string(strval));
+        g_free(strval);
         g_object_get(G_OBJECT(message), "id", &strval, NULL);
         json_object_object_add(jobj_head, "id", json_object_new_string(strval));
+        g_free(strval);
     }
     else if (ipcam_message_is_response(message))
     {
         g_object_get(G_OBJECT(message), "action", &strval, NULL);
         json_object_object_add(jobj_head, "action", json_object_new_string(strval));
+        g_free(strval);
         g_object_get(G_OBJECT(message), "id", &strval, NULL);
         json_object_object_add(jobj_head, "id", json_object_new_string(strval));
+        g_free(strval);
         g_object_get(G_OBJECT(message), "code", &strval, NULL);
         json_object_object_add(jobj_head, "code", json_object_new_string(strval));
+        g_free(strval);
     }
     else
     {
@@ -298,7 +307,19 @@ const gchar *ipcam_message_to_string(IpcamMessage *message)
     }
 
     json_object_object_add(jobj, "head", jobj_head);
-    json_object_object_add(jobj, "body", priv->body);
+    if (priv->body)
+    {
+        json_object_object_add(jobj, "body", priv->body);
+        json_object_get(priv->body);
+    }
+    else
+    {
+        json_object_object_add(jobj, "body", (json_object *)NULL);
+    }
+
+    const gchar *string = json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_PLAIN);
+    json_object_put(jobj_head);
+    json_object_put(jobj);
     
-    return json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_PLAIN);
+    return string;
 }

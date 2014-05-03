@@ -56,18 +56,23 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
     g_return_val_if_fail(ipcam_message_is_request(message), FALSE);
     g_return_val_if_fail(handler, FALSE);
 
+    gboolean ret = FALSE;
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
     gchar *msg_id;
     g_object_get(G_OBJECT(message), "id", &msg_id, NULL);
-    g_return_val_if_fail(!g_hash_table_contains(priv->msg_hash, msg_id), FALSE);
+    if (!g_hash_table_contains(priv->msg_hash, msg_id))
+    {
+        hash_value *value = g_new(hash_value, 1);
+        value->time = time((time_t *)NULL);
+        value->timeout = timeout;
+        value->obj = obj;
+        value->callback = handler;
 
-    hash_value *value = g_new(hash_value, 1);
-    value->time = time((time_t *)NULL);
-    value->timeout = timeout;
-    value->obj = obj;
-    value->callback = handler;
+        ret = g_hash_table_insert(priv->msg_hash, (gpointer)msg_id, (gpointer)value);
+    }
 
-    return g_hash_table_insert(priv->msg_hash, (gpointer)msg_id, (gpointer)value);
+    g_free(msg_id);
+    return ret;
 }
 static void clear(gpointer key, gpointer value, gpointer user_data)
 {
@@ -92,18 +97,21 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
 {
     g_return_val_if_fail(!ipcam_message_is_response(message), FALSE);
 
+    gboolean ret = FALSE;
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
     gchar *msg_id;
     g_object_get(G_OBJECT(message), "id", &msg_id, NULL);
-    g_return_val_if_fail(g_hash_table_contains(priv->msg_hash, msg_id), FALSE);
+    if (g_hash_table_contains(priv->msg_hash, msg_id))
+    {
+        hash_value *value = (hash_value *)g_hash_table_lookup(priv->msg_hash, (gconstpointer)msg_id);
+        assert(value);
+        value->callback(value->obj, message, FALSE);
+    
+        g_hash_table_remove(priv->msg_hash, (gpointer)msg_id);
+    }
 
-    hash_value *value = (hash_value *)g_hash_table_lookup(priv->msg_hash, (gconstpointer)msg_id);
-    assert(value);
-    value->callback(value->obj, message, FALSE);
-    
-    g_hash_table_remove(priv->msg_hash, (gpointer)msg_id);
-    
-    return TRUE;
+    g_free(msg_id);
+    return ret;
 }
 void ipcam_message_manager_clear(IpcamMessageManager *message_manager)
 {
