@@ -1,9 +1,7 @@
-#include "message.h"
-#include "notice_message.h"
-#include "request_message.h"
-#include "response_message.h"
+#include "messages.h"
 #include <json.h>
 #include <string.h>
+#include <assert.h>
 
 enum
 {
@@ -22,7 +20,7 @@ typedef struct _IpcamMessagePrivate
     gchar *type;
     gchar *token;
     gchar *version;
-    gchar *body;
+    json_object *body;
 } IpcamMessagePrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamMessage, ipcam_message, G_TYPE_OBJECT);
@@ -43,6 +41,11 @@ static void ipcam_message_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
+        IpcamMessagePrivate *priv = ipcam_message_get_instance_private(IPCAM_MESSAGE(self));
+        g_free(priv->type);
+        g_free(priv->token);
+        g_free(priv->version);
+        g_free(priv->body);
         G_OBJECT_CLASS(ipcam_message_parent_class)->dispose(self);
     }
 }
@@ -76,7 +79,7 @@ static void ipcam_message_get_property(GObject *object,
         break;
     case IPCAM_MESSAGE_BODY:
         {
-            g_value_set_string(value, priv->body);
+            g_value_set_pointer(value, priv->body);
         }
         break;
     default:
@@ -91,6 +94,7 @@ static void ipcam_message_set_property(GObject *object,
 {
     IpcamMessage *self = IPCAM_MESSAGE(object);
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(self);
+    json_object *jobj = NULL;
     switch(property_id)
     {
     case IPCAM_MESSAGE_MSGTYPE:
@@ -116,9 +120,13 @@ static void ipcam_message_set_property(GObject *object,
         break;
     case IPCAM_MESSAGE_BODY:
         {
-            g_free(priv->body);
-            priv->body = g_value_dup_string(value);
-            g_print("ipcam message body: %s\n", priv->body);
+            jobj = g_value_get_pointer(value);
+            if (jobj != priv->body)
+            {
+                g_free(priv->body);
+                priv->body = jobj;
+            }
+            g_print("ipcam message body\n");
         }
         break;
     default:
@@ -128,6 +136,11 @@ static void ipcam_message_set_property(GObject *object,
 }
 static void ipcam_message_init(IpcamMessage *self)
 {
+    IpcamMessagePrivate *priv = ipcam_message_get_instance_private(self);
+    priv->type = NULL;
+    priv->token = NULL;
+    priv->version = NULL;
+    priv->body = NULL;
 }
 static void ipcam_message_class_init(IpcamMessageClass *klass)
 {
@@ -158,11 +171,10 @@ static void ipcam_message_class_init(IpcamMessageClass *klass)
                             "1.0", // default value
                             G_PARAM_READWRITE);
     obj_properties[IPCAM_MESSAGE_BODY] =
-        g_param_spec_string("body",
-                            "Message body",
-                            "Set message body",
-                            "", // default value
-                            G_PARAM_READWRITE);
+        g_param_spec_pointer("body",
+                             "Message body",
+                             "Set message body",
+                             G_PARAM_READWRITE);
     
     g_object_class_install_properties(this_class, N_PROPERTIES, obj_properties);
 }
@@ -227,21 +239,67 @@ IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
 }
 gboolean ipcam_message_is_request(IpcamMessage *message)
 {
+    g_return_val_if_fail(IPCAM_IS_MESSAGE(message), FALSE);
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(message);
     return (0 == strcmp(priv->type, "request"));
 }
 gboolean ipcam_message_is_response(IpcamMessage *message)
 {
+    g_return_val_if_fail(IPCAM_IS_MESSAGE(message), FALSE);
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(message);
     return (0 == strcmp(priv->type, "response"));
 }
 gboolean ipcam_message_is_notice(IpcamMessage *message)
 {
+    g_return_val_if_fail(IPCAM_IS_MESSAGE(message), FALSE);
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(message);
     return (0 == strcmp(priv->type, "notice"));
 }
 const gchar *ipcam_message_to_string(IpcamMessage *message)
 {
-    // ToDo
-    return NULL;
+    g_return_val_if_fail(IPCAM_IS_MESSAGE(message), NULL);
+    json_object *jobj = json_object_new_object();
+    json_object *jobj_head = json_object_new_object();
+    assert(jobj);
+    IpcamMessagePrivate *priv = ipcam_message_get_instance_private(message);
+    json_object_object_add(jobj_head, "type", json_object_new_string(priv->type));
+    json_object_object_add(jobj_head, "token", json_object_new_string(priv->token));
+    json_object_object_add(jobj_head, "version", json_object_new_string(priv->version));
+
+    if (ipcam_message_is_notice(message))
+    {
+        gchar *strval;
+        g_object_get(G_OBJECT(message), "event", &strval, NULL);
+        json_object_object_add(jobj_head, "event", json_object_new_string(strval));
+    }
+    else if (ipcam_message_is_request(message))
+    {
+        gchar *strval;
+        g_object_get(G_OBJECT(message), "action", &strval, NULL);
+        json_object_object_add(jobj_head, "action", json_object_new_string(strval));
+        g_object_get(G_OBJECT(message), "id", &strval, NULL);
+        json_object_object_add(jobj_head, "id", json_object_new_string(strval));
+    }
+    else if (ipcam_message_is_notice(message))
+    {
+        gchar *strval;
+        g_object_get(G_OBJECT(message), "action", &strval, NULL);
+        json_object_object_add(jobj_head, "action", json_object_new_string(strval));
+        g_object_get(G_OBJECT(message), "id", &strval, NULL);
+        json_object_object_add(jobj_head, "id", json_object_new_string(strval));
+        g_object_get(G_OBJECT(message), "code", &strval, NULL);
+        json_object_object_add(jobj_head, "code", json_object_new_string(strval));
+    }
+    else
+    {
+        g_warning ("Class '%s' does not have a valid message type",
+                   G_OBJECT_TYPE_NAME(message));
+    }
+
+    json_object_object_add(jobj, "head", jobj_head);
+    json_object_put(jobj_head);
+
+    json_object_object_add(jobj, "body", priv->body);
+    
+    return json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_PLAIN);
 }
