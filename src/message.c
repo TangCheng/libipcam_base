@@ -1,5 +1,5 @@
 #include "messages.h"
-#include <json.h>
+#include <json-glib/json-glib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -20,7 +20,7 @@ typedef struct _IpcamMessagePrivate
     gchar *type;
     gchar *token;
     gchar *version;
-    json_object *body;
+    JsonNode *body;
 } IpcamMessagePrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamMessage, ipcam_message, G_TYPE_OBJECT);
@@ -41,19 +41,19 @@ static void ipcam_message_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamMessagePrivate *priv = ipcam_message_get_instance_private(IPCAM_MESSAGE(self));
-        g_free(priv->type);
-        g_free(priv->token);
-        g_free(priv->version);
-        if (priv->body)
-        {
-            json_object_put(priv->body);
-        }
         G_OBJECT_CLASS(ipcam_message_parent_class)->dispose(self);
     }
 }
 static void ipcam_message_finalize(GObject *self)
 {
+    IpcamMessagePrivate *priv = ipcam_message_get_instance_private(IPCAM_MESSAGE(self));
+    g_free(priv->type);
+    g_free(priv->token);
+    g_free(priv->version);
+    if (priv->body)
+    {
+        json_node_free(priv->body);
+    }
     G_OBJECT_CLASS(ipcam_message_parent_class)->finalize(self);
 }
 static void ipcam_message_get_property(GObject *object,
@@ -97,7 +97,6 @@ static void ipcam_message_set_property(GObject *object,
 {
     IpcamMessage *self = IPCAM_MESSAGE(object);
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(self);
-    json_object *jobj = NULL;
     switch(property_id)
     {
     case IPCAM_MESSAGE_MSGTYPE:
@@ -123,13 +122,9 @@ static void ipcam_message_set_property(GObject *object,
         break;
     case IPCAM_MESSAGE_BODY:
         {
-            jobj = g_value_get_pointer(value);
-            if (jobj != priv->body)
-            {
-                g_free(priv->body);
-                priv->body = jobj;
-            }
-            g_print("ipcam message body\n");
+            json_node_free(priv->body);
+            priv->body = g_value_get_pointer(value);
+            g_print("ipcam message body: %p\n", priv->body);
         }
         break;
     default:
@@ -181,20 +176,36 @@ static void ipcam_message_class_init(IpcamMessageClass *klass)
     
     g_object_class_install_properties(this_class, N_PROPERTIES, obj_properties);
 }
-static const gchar *ipcam_message_get_head_attr(json_object *json, const gchar *attr)
+static gchar *ipcam_message_get_head_attr(JsonNode *json, const gchar *attr)
 {
-    json_object *jobj;
-    g_return_val_if_fail(json_object_object_get_ex(json, "head", &jobj), NULL);
-    g_return_val_if_fail(json_object_object_get_ex(jobj, attr, &jobj), NULL);
-    return json_object_get_string(jobj);
+    gchar *str = NULL;
+    JsonNode *jattr = json_path_query(attr, json, NULL);
+    JsonArray *array = json_node_get_array(jattr);
+    if (json_array_get_length(array) > 0)
+    {
+        str = g_strdup(json_array_get_string_element(array, 0));
+    }
+    json_node_free(jattr);
+    return str;
 }
-static const gchar *ipcam_message_get_body(json_object *json)
+static const JsonNode *ipcam_message_get_body(JsonNode *json)
 {
-    json_object *jobj;
-    g_return_val_if_fail(json_object_object_get_ex(json, "body", &jobj), NULL);
-    return json_object_get_string(jobj);
+    JsonNode *jbody = NULL;
+    JsonNode* jnode = json_path_query("$.body", json, NULL);
+    JsonArray *array = json_node_get_array(jnode);
+    if (json_array_get_length(array) > 0)
+    {
+        jbody = json_array_dup_element(array, 0);
+        if (JSON_NODE_TYPE(jbody) == JSON_NODE_NULL)
+        {
+            json_node_free(jbody);
+            jbody = NULL;
+        }
+    }
+    json_node_free(jnode);
+    return jbody;
 }
-static gboolean ipcam_message_validate_message(json_object *json)
+static gboolean ipcam_message_validate_message(JsonNode *json)
 {
     // ToDo
     return TRUE;
@@ -202,42 +213,56 @@ static gboolean ipcam_message_validate_message(json_object *json)
 IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
 {
     IpcamMessage *message = NULL;
-    struct json_object *json = json_tokener_parse(json_str);
-    g_return_val_if_fail(json, NULL);
-    g_return_val_if_fail(ipcam_message_validate_message(json), NULL);
+    JsonParser *parser = json_parser_new();
+    JsonNode *jmsg;
+
+    if (!json_parser_load_from_data(parser, json_str, -1, NULL))
+    {
+        g_object_unref(parser);
+        return NULL;
+    }
+    jmsg = json_parser_get_root(parser);
+    if (!ipcam_message_validate_message(jmsg))
+    {
+        g_object_unref(parser);
+        return NULL;
+    }
     
-    const gchar *type = ipcam_message_get_head_attr(json, "type");
+    gchar *type = ipcam_message_get_head_attr(jmsg, "$.head.type");
+    gchar *action = ipcam_message_get_head_attr(jmsg, "$.head.action");
+    gchar *id = ipcam_message_get_head_attr(jmsg, "$.head.id");
+    gchar *code = ipcam_message_get_head_attr(jmsg, "$.head.code");
+    gchar *event = ipcam_message_get_head_attr(jmsg, "$.head.event");
+    gchar *token = ipcam_message_get_head_attr(jmsg, "$.head.token");
+    gchar *version = ipcam_message_get_head_attr(jmsg, "$.head.version");
     if (0 == strcmp(type, "request"))
     {
-        message = g_object_new(IPCAM_REQUEST_MESSAGE_TYPE, NULL);
-        g_object_set(G_OBJECT(message),
-                     "action", ipcam_message_get_head_attr(json, "action"),
-                     "id", ipcam_message_get_head_attr(json, "id"),
-                     NULL);
+        message = g_object_new(IPCAM_REQUEST_MESSAGE_TYPE, "action", action, "id", id, NULL);
     }
     else if (0 == strcmp(type, "response"))
     {
-        message = g_object_new(IPCAM_RESPONSE_MESSAGE_TYPE, NULL);
-        g_object_set(G_OBJECT(message),
-                     "action", ipcam_message_get_head_attr(json, "action"),
-                     "id", ipcam_message_get_head_attr(json, "id"),
-                     "code", ipcam_message_get_head_attr(json, "code"),
-                     NULL);
+        message = g_object_new(IPCAM_RESPONSE_MESSAGE_TYPE, "action", action, "id", id, "code", code, NULL);
     }
     else if (0 == strcmp(type, "notice"))
     {
-        message = g_object_new(IPCAM_NOTICE_MESSAGE_TYPE, NULL);
-        g_object_set(G_OBJECT(message), "event", ipcam_message_get_head_attr(json, "event"), NULL);
+        message = g_object_new(IPCAM_NOTICE_MESSAGE_TYPE, "event", event, NULL);
     }
     if (NULL != message)
     {
         g_object_set(G_OBJECT(message),
-                     "token", ipcam_message_get_head_attr(json, "token"),
-                     "version", ipcam_message_get_head_attr(json, "version"),
-                     "body", ipcam_message_get_body(json),
+                     "token", token,
+                     "version", version,
+                     "body", ipcam_message_get_body(jmsg),
                      NULL);
     }
-    json_object_put(json);
+    g_free(type);
+    g_free(action);
+    g_free(id);
+    g_free(code);
+    g_free(event);
+    g_free(token);
+    g_free(version);
+    g_object_unref(parser);
     return message;
 }
 gboolean ipcam_message_is_request(IpcamMessage *message)
@@ -261,43 +286,53 @@ gboolean ipcam_message_is_notice(IpcamMessage *message)
 const gchar *ipcam_message_to_string(IpcamMessage *message)
 {
     g_return_val_if_fail(IPCAM_IS_MESSAGE(message), NULL);
-    json_object *jobj = json_object_new_object();
-    json_object *jobj_head = json_object_new_object();
-    assert(jobj);
-    assert(jobj_head);
+    JsonBuilder *head_builder = json_builder_new();
+    assert(head_builder);
+    JsonBuilder *builder = json_builder_new();
+    assert(builder);
+    JsonGenerator *generator = json_generator_new();
+    assert(generator);
     gchar *strval = NULL;
     IpcamMessagePrivate *priv = ipcam_message_get_instance_private(message);
-    json_object_object_add(jobj_head, "type", json_object_new_string(priv->type));
-    assert(priv->token);
-    json_object_object_add(jobj_head, "token", json_object_new_string(priv->token));
-    assert(priv->version);
-    json_object_object_add(jobj_head, "version", json_object_new_string(priv->version));
-
+    json_builder_begin_object(head_builder);
+    json_builder_set_member_name(head_builder, "type");
+    json_builder_add_string_value(head_builder, priv->type);
+    json_builder_set_member_name(head_builder, "token");
+    json_builder_add_string_value(head_builder, priv->token);
+    json_builder_set_member_name(head_builder, "version");
+    json_builder_add_string_value(head_builder, priv->version);
+    
     if (ipcam_message_is_notice(message))
     {
         g_object_get(G_OBJECT(message), "event", &strval, NULL);
-        json_object_object_add(jobj_head, "event", json_object_new_string(strval));
+        json_builder_set_member_name(head_builder, "event");
+        json_builder_add_string_value(head_builder, strval);
         g_free(strval);
     }
     else if (ipcam_message_is_request(message))
     {
         g_object_get(G_OBJECT(message), "action", &strval, NULL);
-        json_object_object_add(jobj_head, "action", json_object_new_string(strval));
+        json_builder_set_member_name(head_builder, "action");
+        json_builder_add_string_value(head_builder, strval);
         g_free(strval);
         g_object_get(G_OBJECT(message), "id", &strval, NULL);
-        json_object_object_add(jobj_head, "id", json_object_new_string(strval));
+        json_builder_set_member_name(head_builder, "id");
+        json_builder_add_string_value(head_builder, strval);
         g_free(strval);
     }
     else if (ipcam_message_is_response(message))
     {
         g_object_get(G_OBJECT(message), "action", &strval, NULL);
-        json_object_object_add(jobj_head, "action", json_object_new_string(strval));
+        json_builder_set_member_name(head_builder, "action");
+        json_builder_add_string_value(head_builder, strval);
         g_free(strval);
         g_object_get(G_OBJECT(message), "id", &strval, NULL);
-        json_object_object_add(jobj_head, "id", json_object_new_string(strval));
+        json_builder_set_member_name(head_builder, "id");
+        json_builder_add_string_value(head_builder, strval);
         g_free(strval);
         g_object_get(G_OBJECT(message), "code", &strval, NULL);
-        json_object_object_add(jobj_head, "code", json_object_new_string(strval));
+        json_builder_set_member_name(head_builder, "code");
+        json_builder_add_string_value(head_builder, strval);
         g_free(strval);
     }
     else
@@ -305,21 +340,31 @@ const gchar *ipcam_message_to_string(IpcamMessage *message)
         g_warning ("Class '%s' does not have a valid message type",
                    G_OBJECT_TYPE_NAME(message));
     }
-
-    json_object_object_add(jobj, "head", jobj_head);
+    json_builder_end_object(head_builder);
+    json_builder_begin_object(builder);
+    json_builder_set_member_name(builder, "head");
+    JsonNode *head = json_builder_get_root(head_builder);
+    json_builder_add_value(builder, head);
+    json_builder_set_member_name(builder, "body");
     if (priv->body)
     {
-        json_object_object_add(jobj, "body", priv->body);
-        json_object_get(priv->body);
+        json_builder_add_value(builder, priv->body);
     }
     else
     {
-        json_object_object_add(jobj, "body", (json_object *)NULL);
+        json_builder_add_null_value(builder);
     }
+    json_builder_end_object(builder);
 
-    const gchar *string = json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_PLAIN);
-    json_object_put(jobj_head);
-    json_object_put(jobj);
+    JsonNode *msg_root = json_builder_get_root(builder);
+    json_generator_set_root(generator, msg_root);
+    json_generator_set_pretty(generator, TRUE);
+    
+    const gchar *string = json_generator_to_data(generator, NULL);
+    json_node_free(msg_root);
+    g_object_unref(generator);
+    g_object_unref(head_builder);
+    g_object_unref(builder);
     
     return string;
 }

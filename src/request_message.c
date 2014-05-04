@@ -22,6 +22,22 @@ G_DEFINE_TYPE_WITH_PRIVATE(IpcamRequestMessage, ipcam_request_message, IPCAM_MES
 
 static GParamSpec *obj_properties[N_PROPERTIES] = {NULL, };
 
+static void ipcam_request_message_dispose(GObject *self)
+{
+    static gboolean first_run = TRUE;
+    if (first_run)
+    {
+        first_run = FALSE;
+        G_OBJECT_CLASS(ipcam_request_message_parent_class)->dispose(self);
+    }
+}
+static void ipcam_request_message_finalize(GObject *self)
+{
+    IpcamRequestMessagePrivate *priv = ipcam_request_message_get_instance_private(IPCAM_REQUEST_MESSAGE(self));
+    g_free(priv->action);
+    g_free(priv->id);
+    G_OBJECT_CLASS(ipcam_request_message_parent_class)->finalize(self);
+}
 static void ipcam_request_message_get_property(GObject *object,
                                                guint property_id,
                                                GValue *value,
@@ -83,7 +99,9 @@ static void ipcam_request_message_init(IpcamRequestMessage *self)
 static void ipcam_request_message_class_init(IpcamRequestMessageClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
-    
+
+    this_class->dispose = &ipcam_request_message_dispose;
+    this_class->finalize = &ipcam_request_message_finalize;
     this_class->get_property = &ipcam_request_message_get_property;
     this_class->set_property = &ipcam_request_message_set_property;
 
