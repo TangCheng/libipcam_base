@@ -1,5 +1,5 @@
 #include "socket_manager.h"
-#include <czmq.h>
+#include <zmq.h>
 #include <assert.h>
 #include <stdlib.h>
 
@@ -33,19 +33,19 @@ static void ipcam_socket_manager_dispose(GObject *self)
     {
         first_run = FALSE;
         G_OBJECT_CLASS(ipcam_socket_manager_parent_class)->dispose(self);
+        IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(IPCAM_SOCKET_MANAGER(self));
+        g_hash_table_destroy(priv->socket_hash);
     }
 }
 static void ipcam_socket_manager_finalize(GObject *self)
 {
-    IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(IPCAM_SOCKET_MANAGER(self));
-    g_hash_table_destroy(priv->socket_hash);
     G_OBJECT_CLASS(ipcam_socket_manager_parent_class)->finalize(self);
 }
 static void destroy_notify(gpointer data)
 {
     IpcamSocketManagerHashValue *value = (IpcamSocketManagerHashValue *)data;
     g_free(value->name);
-    g_free(value);
+    free(value);
 }
 static void ipcam_socket_manager_init(IpcamSocketManager *self)
 {
@@ -66,7 +66,7 @@ gboolean ipcam_socket_manager_add(IpcamSocketManager *socket_manager,
                                   const void *mq_socket)
 {
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    IpcamSocketManagerHashValue *value = g_new(IpcamSocketManagerHashValue, 1);
+    IpcamSocketManagerHashValue *value = (IpcamSocketManagerHashValue *)malloc(sizeof(IpcamSocketManagerHashValue));
     g_return_val_if_fail(value, FALSE);
     value->name = g_strdup(name);
     value->mq_socket = (void *)mq_socket;
@@ -128,7 +128,7 @@ gboolean ipcam_socket_manager_get_by_name(IpcamSocketManager *socket_manager,
 }
 gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
                                             const void *mq_socket,
-                                            gchar **name,
+                                            gchar *name,
                                             int *type)
 {
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
@@ -139,7 +139,7 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
     if (NULL != value)
     {
         *type = value->type;
-        *name = g_strdup(value->name);
+        name = g_strdup(value->name);
         ret = TRUE;
     }
     return ret;
@@ -147,7 +147,7 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
 static void iterator(gpointer key, gpointer value, gpointer user_data)
 {
     IpcamSocketManagerHashValue *item = (IpcamSocketManagerHashValue *)value;
-    //zsocket_close(item->mq_socket);
+    zmq_close(item->mq_socket);
 }
 void ipcam_socket_manager_close_all_socket(IpcamSocketManager *socket_manager)
 {

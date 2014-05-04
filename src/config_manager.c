@@ -17,10 +17,14 @@ static void ipcam_config_manager_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(IPCAM_CONFIG_MANAGER(self));
-        g_hash_table_destroy(priv->conf_hash);
         G_OBJECT_CLASS(ipcam_config_manager_parent_class)->dispose(self);
     }
+}
+static void ipcam_config_manager_finalize(GObject *self)
+{
+    IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(IPCAM_CONFIG_MANAGER(self));
+    g_hash_table_destroy(priv->conf_hash);
+    G_OBJECT_CLASS(ipcam_config_manager_parent_class)->finalize(self);
 }
 static void ipcam_config_manager_init(IpcamConfigManager *self)
 {
@@ -31,6 +35,7 @@ static void ipcam_config_manager_class_init(IpcamConfigManagerClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
     this_class->dispose = &ipcam_config_manager_dispose;
+    this_class->finalize = &ipcam_config_manager_finalize;
 }
 gboolean ipcam_config_manager_load_config(IpcamConfigManager *config_manager, const gchar *file_path)
 {

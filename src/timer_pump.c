@@ -37,11 +37,15 @@ static void ipcam_timer_pump_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamTimerPumpPrivate *priv = ipcam_timer_pump_get_instance_private(IPCAM_TIMER_PUMP(self));
-        g_hash_table_remove_all(priv->timers_hash);
-        g_hash_table_destroy(priv->timers_hash);
         G_OBJECT_CLASS(ipcam_timer_pump_parent_class)->dispose(self);
     }
+}
+static void ipcam_timer_pump_finalize(GObject *self)
+{
+    IpcamTimerPumpPrivate *priv = ipcam_timer_pump_get_instance_private(IPCAM_TIMER_PUMP(self));
+    g_hash_table_remove_all(priv->timers_hash);
+    g_hash_table_destroy(priv->timers_hash);
+    G_OBJECT_CLASS(ipcam_timer_pump_parent_class)->finalize(self);
 }
 static void destroy_key(gpointer data)
 {
@@ -67,6 +71,7 @@ static void ipcam_timer_pump_class_init(IpcamTimerPumpClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
     this_class->dispose = &ipcam_timer_pump_dispose;
+    this_class->finalize = &ipcam_timer_pump_finalize;
     
     IpcamBaseServiceClass *base_service_class = IPCAM_BASE_SERVICE_CLASS(klass);
     base_service_class->on_read = &ipcam_timer_pump_on_read_impl;

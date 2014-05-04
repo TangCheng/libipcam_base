@@ -25,11 +25,15 @@ static void ipcam_message_manager_dispose(GObject *self)
     {
         first_run = FALSE;
         G_OBJECT_CLASS(ipcam_message_manager_parent_class)->dispose(self);
-        IpcamMessageManagerPrivate *priv =
-            ipcam_message_manager_get_instance_private(IPCAM_MESSAGE_MANAGER(self));
-        g_hash_table_remove_all(priv->msg_hash);
-        g_hash_table_destroy(priv->msg_hash);
     }
+}
+static void ipcam_message_manager_finalize(GObject *self)
+{
+    IpcamMessageManagerPrivate *priv =
+            ipcam_message_manager_get_instance_private(IPCAM_MESSAGE_MANAGER(self));
+    g_hash_table_remove_all(priv->msg_hash);
+    g_hash_table_destroy(priv->msg_hash);
+    G_OBJECT_CLASS(ipcam_message_manager_parent_class)->finalize(self);
 }
 static void destroy_notify(gpointer data)
 {
@@ -46,6 +50,7 @@ static void ipcam_message_manager_class_init(IpcamMessageManagerClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
     this_class->dispose = &ipcam_message_manager_dispose;
+    this_class->finalize = &ipcam_message_manager_finalize;
 }
 gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
                                         IpcamMessage *message,

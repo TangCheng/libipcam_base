@@ -30,13 +30,13 @@ static void ipcam_service_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamServicePrivate *priv = ipcam_service_get_instance_private(IPCAM_SERVICE(self));
-        g_object_unref(priv->socket_manager);
         G_OBJECT_CLASS(ipcam_service_parent_class)->dispose(self);
     }
 }
 static void ipcam_service_finalize(GObject *self)
 {
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(IPCAM_SERVICE(self));
+    g_object_unref(priv->socket_manager);
     G_OBJECT_CLASS(ipcam_service_parent_class)->finalize(self);
 }
 static void ipcam_service_init(IpcamService *self)

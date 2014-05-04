@@ -23,6 +23,14 @@ G_DEFINE_TYPE_WITH_PRIVATE(IpcamResponseMessage, ipcam_response_message, IPCAM_M
 
 static GParamSpec *obj_properties[N_PROPERTIES] = {NULL, };
 
+static void ipcam_response_message_finalize(GObject *self)
+{
+    IpcamResponseMessagePrivate *priv = ipcam_response_message_get_instance_private(IPCAM_RESPONSE_MESSAGE(self));
+    g_free(priv->action);
+    g_free(priv->id);
+    g_free(priv->code);
+    G_OBJECT_CLASS(ipcam_response_message_parent_class)->finalize(self);
+}
 static void ipcam_response_message_get_property(GObject *object,
                                                 guint property_id,
                                                 GValue *value,
@@ -94,7 +102,7 @@ static void ipcam_response_message_init(IpcamResponseMessage *self)
 static void ipcam_response_message_class_init(IpcamResponseMessageClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
-    
+    this_class->finalize = &ipcam_response_message_finalize;
     this_class->get_property = &ipcam_response_message_get_property;
     this_class->set_property = &ipcam_response_message_set_property;
 

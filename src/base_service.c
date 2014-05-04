@@ -43,16 +43,16 @@ static void ipcam_base_service_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(IPCAM_BASE_SERVICE(self));
-        zpoller_destroy(&priv->poller);
-        priv->poller = NULL;
-        zctx_destroy(&priv->mq_context);
-        priv->mq_context = NULL;
         G_OBJECT_CLASS(ipcam_base_service_parent_class)->dispose(self);
     }
 }
 static void ipcam_base_service_finalize(GObject *self)
 {
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(IPCAM_BASE_SERVICE(self));
+    zpoller_destroy(&priv->poller);
+    priv->poller = NULL;
+    zctx_destroy(&priv->mq_context);
+    priv->mq_context = NULL;
     G_OBJECT_CLASS(ipcam_base_service_parent_class)->finalize(self);
 }
 static void ipcam_base_service_get_property(GObject *object,

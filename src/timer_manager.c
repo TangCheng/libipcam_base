@@ -23,10 +23,14 @@ static void ipcam_timer_manager_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamTimerManagerPrivate *priv = ipcam_timer_manager_get_instance_private(IPCAM_TIMER_MANAGER(self));
-        g_hash_table_destroy(priv->timers_hash);
         G_OBJECT_CLASS(ipcam_timer_manager_parent_class)->dispose(self);
     }
+}
+static void ipcam_timer_manager_finalize(GObject *self)
+{
+    IpcamTimerManagerPrivate *priv = ipcam_timer_manager_get_instance_private(IPCAM_TIMER_MANAGER(self));
+    g_hash_table_destroy(priv->timers_hash);
+    G_OBJECT_CLASS(ipcam_timer_manager_parent_class)->finalize(self);
 }
 static void destroy(gpointer data)
 {
@@ -43,6 +47,7 @@ static void ipcam_timer_manager_class_init(IpcamTimerManagerClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
     this_class->dispose = &ipcam_timer_manager_dispose;
+    this_class->finalize = &ipcam_timer_manager_finalize;
 }
 gboolean ipcam_timer_manager_add_timer(IpcamTimerManager *timer_manager,
                                        const gchar *timer_id,

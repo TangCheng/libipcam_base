@@ -18,6 +18,12 @@ G_DEFINE_TYPE_WITH_PRIVATE(IpcamNoticeMessage, ipcam_notice_message, IPCAM_MESSA
 
 static GParamSpec *obj_properties[N_PROPERTIES] = {NULL, };
 
+static void ipcam_notice_message_finalize(GObject *self)
+{
+    IpcamNoticeMessagePrivate *priv = ipcam_notice_message_get_instance_private(IPCAM_NOTICE_MESSAGE(self));
+    g_free(priv->event);
+    G_OBJECT_CLASS(ipcam_notice_message_parent_class)->finalize(self);
+}
 static void ipcam_notice_message_get_property(GObject *object,
                                               guint property_id,
                                               GValue *value,
@@ -65,7 +71,7 @@ static void ipcam_notice_message_init(IpcamNoticeMessage *self)
 static void ipcam_notice_message_class_init(IpcamNoticeMessageClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
-    
+    this_class->finalize = &ipcam_notice_message_finalize;
     this_class->get_property = &ipcam_notice_message_get_property;
     this_class->set_property = &ipcam_notice_message_set_property;
 
