@@ -60,10 +60,6 @@ static void ipcam_base_app_dispose(GObject *self)
     if (first_run)
     {
         first_run = FALSE;
-        IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(IPCAM_BASE_APP(self));
-        g_object_unref(priv->config_manager);
-        g_object_unref(priv->timer_manager);
-        g_object_unref(priv->msg_manager);
         G_OBJECT_CLASS(ipcam_base_app_parent_class)->dispose(self);
     }
 }
@@ -71,6 +67,9 @@ static void ipcam_base_app_finalize(GObject *self)
 {
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(IPCAM_BASE_APP(self));
     g_hash_table_destroy(priv->handler_hash);
+    g_object_unref(priv->config_manager);
+    g_object_unref(priv->timer_manager);
+    g_object_unref(priv->msg_manager);
     G_OBJECT_CLASS(ipcam_base_app_parent_class)->finalize(self);
 }
 static void ipcam_base_app_init(IpcamBaseApp *self)

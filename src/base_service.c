@@ -53,6 +53,7 @@ static void ipcam_base_service_finalize(GObject *self)
     priv->poller = NULL;
     zctx_destroy(&priv->mq_context);
     priv->mq_context = NULL;
+    g_free(priv->name);
     G_OBJECT_CLASS(ipcam_base_service_parent_class)->finalize(self);
 }
 static void ipcam_base_service_get_property(GObject *object,
