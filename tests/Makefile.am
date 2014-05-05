@@ -10,7 +10,8 @@ noinst_PROGRAMS =  \
 	test_service \
 	test_timer_pump \
 	test_notice_message \
-	test_request_message 
+	test_request_message \
+	test_base_app 
 
 test_service_SOURCES =  \
 	test_service.c
@@ -23,3 +24,7 @@ test_notice_message_SOURCES =  \
 
 test_request_message_SOURCES =  \
 	test_request_message.c
+
+test_base_app_SOURCES = \
+	app.c \
+	test_base_app.c
