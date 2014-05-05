@@ -119,8 +119,7 @@ static void ipcam_base_app_load_config(IpcamBaseApp *base_app)
 {
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     ipcam_config_manager_load_config(priv->config_manager, "config/app.yml");
-    ipcam_config_manager_merge(priv->config_manager, "token",
-                               G_OBJECT_CLASS_NAME(IPCAM_BASE_APP_GET_CLASS(base_app)));
+    ipcam_config_manager_merge(priv->config_manager, "token", G_OBJECT_TYPE_NAME(base_app));
 }
 static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app)
 {
@@ -138,10 +137,12 @@ static void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
 {
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     ipcam_timer_manager_add_timer(priv->timer_manager, timer_id, G_OBJECT(base_app), callback);
-    const gchar **strings = (const gchar **)g_new(gpointer, 2);
+    const gchar **strings = (const gchar **)g_new(gpointer, 3);
     strings[0] = timer_id;
     strings[1] = interval;
-    ipcam_service_send_strings(IPCAM_SERVICE(base_app), IPCAM_TIMER_CLIENT_NAME, strings, NULL);
+    strings[2] = NULL;
+    gchar *token = ipcam_config_manager_get(priv->config_manager, "token");
+    ipcam_service_send_strings(IPCAM_SERVICE(base_app), IPCAM_TIMER_CLIENT_NAME, strings, token);
     g_free(strings);
 }
 static void ipcam_base_app_message_manager_clear(GObject *base_app)

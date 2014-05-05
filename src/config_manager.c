@@ -10,6 +10,7 @@ G_DEFINE_TYPE_WITH_PRIVATE(IpcamConfigManager, ipcam_config_manager, G_TYPE_OBJE
 
 static void process_layer(yaml_parser_t *parser, GNode *data);
 static gboolean to_hash(GNode *n, gpointer data);
+static gboolean destroy(GNode *n, gpointer data);
 
 static void ipcam_config_manager_dispose(GObject *self)
 {
@@ -26,10 +27,14 @@ static void ipcam_config_manager_finalize(GObject *self)
     g_hash_table_destroy(priv->conf_hash);
     G_OBJECT_CLASS(ipcam_config_manager_parent_class)->finalize(self);
 }
+static void destroy_notify(gpointer data)
+{
+    g_free(data);
+}
 static void ipcam_config_manager_init(IpcamConfigManager *self)
 {
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(self);
-    priv->conf_hash = g_hash_table_new(g_str_hash, g_str_equal);
+    priv->conf_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_notify, destroy_notify);
 }
 static void ipcam_config_manager_class_init(IpcamConfigManagerClass *klass)
 {
@@ -42,38 +47,42 @@ gboolean ipcam_config_manager_load_config(IpcamConfigManager *config_manager, co
     g_return_val_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager), FALSE);
     GNode *cfg = g_node_new("config");
     yaml_parser_t parser;
+    gboolean ret = FALSE;
 
     FILE *source = fopen(file_path, "rb");
-    yaml_parser_initialize(&parser);
-    yaml_parser_set_input_file(&parser, source);
-    process_layer(&parser, cfg); // Recursive parsing
-    yaml_parser_delete(&parser);
-    fclose(source);
-    IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    g_node_traverse(cfg, G_PRE_ORDER, G_TRAVERSE_ALL, -1, to_hash, (gpointer)priv);
+    if (source)
+    {
+        yaml_parser_initialize(&parser);
+        yaml_parser_set_input_file(&parser, source);
+        process_layer(&parser, cfg); // Recursive parsing
+        yaml_parser_delete(&parser);
+        fclose(source);
+        IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
+        g_node_traverse(cfg, G_PRE_ORDER, G_TRAVERSE_LEAVES, -1, to_hash, (gpointer)priv);
+        ret = TRUE;
+    }
+    g_node_traverse(cfg, G_PRE_ORDER, G_TRAVERSE_ALL, -1, destroy, NULL);
     g_node_destroy(cfg);
-    return TRUE;
+    return ret;
 }
 void ipcam_config_manager_merge(IpcamConfigManager *config_manager, const gchar *conf_name, const gchar *conf_value)
 {
     g_return_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager));
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    gchar *key = g_new(gchar, PATH_MAX);
-    sprintf(key, "%s:%s", "config", conf_name);
+    gchar key[PATH_MAX] = {0};
+    sprintf(key, "config:%s", conf_name);
     if (!g_hash_table_contains(priv->conf_hash, key))
     {
-        g_hash_table_insert(priv->conf_hash, (gpointer)key, (gpointer)conf_value);
+        g_hash_table_insert(priv->conf_hash, g_strdup(key), g_strdup(conf_value));
     }
-    g_free(key);
 }
 gchar *ipcam_config_manager_get(IpcamConfigManager *config_manager, const gchar *conf_name)
 {
     g_return_val_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager), NULL);
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    gchar *key = g_new(gchar, PATH_MAX);
-    sprintf(key, "%s:%s", "config", conf_name);
+    gchar key[PATH_MAX] = {0};
+    sprintf(key, "config:%s", conf_name);
     gchar *ret = g_hash_table_lookup(priv->conf_hash, key);
-    g_free(key);
     return ret;
 }
 
@@ -139,13 +148,24 @@ static gboolean to_hash(GNode *node, gpointer data) {
     }
     for (j = i - 1; j >= 0; j--)
     {
-        printf("%s:", array[j]);
         strcat(key, array[j]);
-        strcat(key, ":");
+        if (j >= 1)
+        {
+            strcat(key, ":");
+        }
         g_free(array[j]);
     }
     g_free(array);
-    g_hash_table_insert(priv->conf_hash, key, node->data);
-    printf("%s\n", (char*) node->data);
+    printf("%s => %s\n", key, node->data);
+    g_hash_table_insert(priv->conf_hash, g_strdup(key), g_strdup(node->data));
+
+    return (FALSE);
+}
+static gboolean destroy(GNode *n, gpointer data)
+{
+    if (!G_NODE_IS_ROOT(n))
+    {
+        g_free(n->data);
+    }
     return (FALSE);
 }
