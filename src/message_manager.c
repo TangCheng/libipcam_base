@@ -40,10 +40,14 @@ static void destroy_notify(gpointer data)
     hash_value *value = (hash_value *)data;
     g_free(value);
 }
+static void destroy_key(gpointer data)
+{
+    g_free(data);
+}
 static void ipcam_message_manager_init(IpcamMessageManager *self)
 {
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(self);
-    priv->msg_hash = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)destroy_notify);
+    priv->msg_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_key, (GDestroyNotify)destroy_notify);
     assert(priv->msg_hash);
 }
 static void ipcam_message_manager_class_init(IpcamMessageManagerClass *klass)
@@ -73,7 +77,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
         value->obj = obj;
         value->callback = handler;
 
-        ret = g_hash_table_insert(priv->msg_hash, (gpointer)msg_id, (gpointer)value);
+        ret = g_hash_table_insert(priv->msg_hash, (gpointer)g_strdup(msg_id), (gpointer)value);
     }
 
     g_free(msg_id);
@@ -100,7 +104,7 @@ static gboolean remove(gpointer key, gpointer value, gpointer user_data)
 }
 gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, IpcamMessage *message)
 {
-    g_return_val_if_fail(!ipcam_message_is_response(message), FALSE);
+    g_return_val_if_fail(ipcam_message_is_response(message), FALSE);
 
     gboolean ret = FALSE;
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
