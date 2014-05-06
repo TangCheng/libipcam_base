@@ -195,6 +195,7 @@ static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
         {
             g_object_unref(msg);
         }
+        g_object_unref(msg);
     }
 }
 static void ipcam_base_app_action_handler(IpcamBaseApp *base_app, IpcamMessage *msg)
