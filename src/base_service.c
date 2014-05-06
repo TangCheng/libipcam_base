@@ -133,12 +133,10 @@ static void ipcam_base_service_in_loop(IpcamBaseService *self)
 {
     if (IPCAM_BASE_SERVICE_GET_CLASS(self)->in_loop != NULL)
         IPCAM_BASE_SERVICE_GET_CLASS(self)->in_loop(self);
-    /*
     else
         g_warning ("Class '%s' does not override the mandatory "
                    "IpcamBaseServiceClass.in_loop() virtual function.",
                    G_OBJECT_TYPE_NAME(self));
-    */
 }
 static void ipcam_base_service_on_read(IpcamBaseService *self, void *mq_socket)
 {
