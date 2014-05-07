@@ -20,7 +20,7 @@ static void ipcam_test_action_handler_run_impl(IpcamTestActionHandler *test_acti
 {
     gpointer service;
     g_object_get(G_OBJECT(test_action_handler), "service", &service, NULL);
-    sleep(1);
+    //sleep(1);
     IpcamRequestMessage *rq_msg = IPCAM_REQUEST_MESSAGE(message);
     IpcamResponseMessage *rp_msg = ipcam_request_message_get_response_message(rq_msg, "1");
     gchar *token;

@@ -132,7 +132,9 @@ static gint zmq_send_strings(void *socket, const gchar *strings[])
         zmsg_addstr(msg, strings[i]);
         i++;
     }
-    return zmsg_send(&msg, socket);
+    gint ret = zmsg_send(&msg, socket);
+    zmsg_destroy(&msg);
+    return ret;
 }
 gboolean ipcam_service_send_strings(IpcamService *service,
                                     const gchar *name,
