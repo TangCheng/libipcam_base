@@ -1,7 +1,6 @@
 #include <string.h>
 #include "base_app.h"
 #include "config_manager.h"
-#include "timer_manager.h"
 #include "timer_pump.h"
 #include "socket_manager.h"
 #include "action_handler.h"
@@ -28,10 +27,6 @@ static void ipcam_base_app_client_receive_string_impl(IpcamBaseApp *self,
                                                       const gchar *string);
 static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app);
 static void ipcam_base_app_load_config(IpcamBaseApp *base_app);
-static void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
-                                     const gchar *timer_id,
-                                     const gchar *interval,
-                                     TCFunc callback);
 static void ipcam_base_app_message_manager_clear(GObject *base_app);
 static void ipcam_base_app_on_timer(IpcamBaseApp *base_app, const gchar *timer_id);
 static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
@@ -130,10 +125,10 @@ static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app)
                                   IPCAM_TIMER_PUMP_ADDRESS,
                                   token);
 }
-static void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
-                                     const gchar *timer_id,
-                                     const gchar *interval,
-                                     TCFunc callback)
+void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
+                              const gchar *timer_id,
+                              const gchar *interval,
+                              TCFunc callback)
 {
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     ipcam_timer_manager_add_timer(priv->timer_manager, timer_id, G_OBJECT(base_app), callback);

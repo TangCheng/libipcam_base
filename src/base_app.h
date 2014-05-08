@@ -4,6 +4,7 @@
 #include "service.h"
 #include "message.h"
 #include "message_manager.h"
+#include "timer_manager.h"
 
 #define IPCAM_BASE_APP_TYPE (ipcam_base_app_get_type())
 #define IPCAM_BASE_APP(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), IPCAM_BASE_APP_TYPE, IpcamBaseApp))
@@ -26,6 +27,10 @@ struct _IpcamBaseAppClass {
 };
 
 GType ipcam_base_app_get_type(void);
+void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
+                              const gchar *timer_id,
+                              const gchar *interval,
+                              TCFunc callback);
 void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
                                      const gchar *handler_name,
                                      GType handler_class_type);
