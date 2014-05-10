@@ -1,6 +1,6 @@
+#include <czmq.h>
 #include "request_message.h"
 #include "response_message.h"
-#include "utils.h"
 
 enum
 {
@@ -92,9 +92,10 @@ static void ipcam_request_message_set_property(GObject *object,
 }
 static void ipcam_request_message_init(IpcamRequestMessage *self)
 {
-    gchar message_id[17] = {0};
-    ipcam_get_rand_str(message_id, 16);
+    zuuid_t *uuid = zuuid_new();
+    gchar *message_id = zuuid_str(uuid);
     g_object_set(G_OBJECT(self), "type", "request", "id", message_id, "action", "", NULL);
+    zuuid_destroy(&uuid);
 }
 static void ipcam_request_message_class_init(IpcamRequestMessageClass *klass)
 {
