@@ -118,8 +118,7 @@ static void ipcam_base_app_load_config(IpcamBaseApp *base_app)
 }
 static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app)
 {
-    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
-    gchar *token = ipcam_config_manager_get(priv->config_manager, "token");
+    gchar *token = ipcam_base_app_get_config(base_app, "token");
     ipcam_service_connect_by_name(IPCAM_SERVICE(base_app),
                                   IPCAM_TIMER_CLIENT_NAME,
                                   IPCAM_TIMER_PUMP_ADDRESS,
@@ -136,7 +135,7 @@ void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
     strings[0] = timer_id;
     strings[1] = interval;
     strings[2] = NULL;
-    gchar *token = ipcam_config_manager_get(priv->config_manager, "token");
+    gchar *token = ipcam_base_app_get_config(base_app, "token");
     ipcam_service_send_strings(IPCAM_SERVICE(base_app), IPCAM_TIMER_CLIENT_NAME, strings, token);
     g_free(strings);
 }
@@ -252,7 +251,7 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
     gchar *token = "";
     if (!is_server)
     {
-        token = ipcam_config_manager_get(priv->config_manager, "token");
+        token = ipcam_base_app_get_config(base_app, "token");
     }
     g_object_set(G_OBJECT(msg), "token", token, NULL);
     ipcam_message_manager_register(priv->msg_manager, msg, G_OBJECT(base_app), callback, timeout);
@@ -262,4 +261,11 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
     ipcam_service_send_strings(IPCAM_SERVICE(base_app), name, strings, client_id);
     g_free(strings[0]);
     g_free(strings);
+}
+const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
+                                       const gchar *config_name)
+{
+    g_return_val_if_fail(IPCAM_IS_BASE_APP(base_app), NULL);
+    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
+    return ipcam_config_manager_get(priv->config_manager, config_name);
 }
