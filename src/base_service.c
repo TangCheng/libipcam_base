@@ -20,6 +20,7 @@ typedef struct _IpcamBaseServicePrivate
     gchar* name;
     zctx_t* mq_context;
     zpoller_t *poller;
+    gboolean terminated;
 } IpcamBaseServicePrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamBaseService, ipcam_base_service, G_TYPE_OBJECT);
@@ -101,6 +102,7 @@ static void ipcam_base_service_init(IpcamBaseService *self)
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     priv->mq_context = zctx_new();
     priv->poller = NULL;
+    priv->terminated = FALSE;
 }
 static void ipcam_base_service_register_impl(IpcamBaseService *self, void *mq_socket)
 {
@@ -154,10 +156,17 @@ static void ipcam_base_service_do_poll(IpcamBaseService *self)
     {
         void *which = zpoller_wait(priv->poller, TIMEOUT_PERIOD);
         //g_return_if_fail(!zpoller_expired(priv->poller));
-        g_return_if_fail(!zpoller_terminated(priv->poller));
-        if (which)
+        if (zpoller_terminated(priv->poller))
+        {
+            priv->terminated = TRUE;
+        }
+        else if (which)
         {
             ipcam_base_service_on_read(self, which);
+        }
+        else
+        {
+            // do nothing
         }
     }
     else
@@ -167,8 +176,9 @@ static void ipcam_base_service_do_poll(IpcamBaseService *self)
 }
 static void ipcam_base_service_start_impl(IpcamBaseService *self)
 {
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     ipcam_base_service_before_start(self);
-    while(TRUE)
+    while (!priv->terminated)
     {
         ipcam_base_service_do_poll(self);
         ipcam_base_service_in_loop(self);
