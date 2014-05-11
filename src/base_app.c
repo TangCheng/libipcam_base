@@ -160,7 +160,7 @@ static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
     IpcamMessage *msg = ipcam_message_parse_from_string(string);
     if (msg)
     {
-        if (type == IPCAM_SOCKET_TYPE_SERVER)
+        if (type == IPCAM_SOCKET_TYPE_SERVER && NULL != client_id)
         {
             gchar *strval;
             g_object_get(G_OBJECT(msg), "token", &strval, NULL);
@@ -188,7 +188,7 @@ static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
         }
         else
         {
-            g_object_unref(msg);
+            // do nothing
         }
         g_object_unref(msg);
     }
