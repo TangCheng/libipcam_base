@@ -116,12 +116,6 @@ static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
     g_free(name);
     zstr_free(&string);
     zstr_free(&client_id);
-
-    IpcamBaseServiceClass *parent_class = g_type_class_peek_parent(IPCAM_SERVICE_GET_CLASS(service));
-    if (parent_class->on_read)
-    {
-        parent_class->on_read(IPCAM_BASE_SERVICE(service), mq_socket);
-    }
 }
 static gint zmq_send_strings(void *socket, const gchar *strings[])
 {
@@ -133,7 +127,6 @@ static gint zmq_send_strings(void *socket, const gchar *strings[])
         i++;
     }
     gint ret = zmsg_send(&msg, socket);
-    zmsg_destroy(&msg);
     return ret;
 }
 gboolean ipcam_service_send_strings(IpcamService *service,
