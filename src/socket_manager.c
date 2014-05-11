@@ -76,13 +76,8 @@ gboolean ipcam_socket_manager_add(IpcamSocketManager *socket_manager,
 }
 static gboolean finder(gpointer key, gpointer value, gpointer user_data)
 {
-    gboolean ret = FALSE;
     IpcamSocketManagerHashValue *hash_value = (IpcamSocketManagerHashValue *)value;
-    if (hash_value->mq_socket == (void *)user_data)
-    {
-        ret = TRUE;
-    }
-    return ret;
+    return (hash_value->mq_socket == (void *)user_data);
 }
 gboolean ipcam_socket_manager_delete_by_socket(IpcamSocketManager *socket_manager, const void *mq_socket)
 {
