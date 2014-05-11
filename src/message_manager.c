@@ -116,7 +116,7 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
         assert(value);
         value->callback(value->obj, message, FALSE);
     
-        g_hash_table_remove(priv->msg_hash, (gpointer)msg_id);
+        ret = g_hash_table_remove(priv->msg_hash, (gpointer)msg_id);
     }
 
     g_free(msg_id);
