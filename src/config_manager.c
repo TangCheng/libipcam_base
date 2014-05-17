@@ -3,7 +3,9 @@
 
 typedef struct _IpcamConfigManagerPrivate
 {
+    gchar key[PATH_MAX];
     GHashTable *conf_hash;
+    GHashTable *collection;
 } IpcamConfigManagerPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamConfigManager, ipcam_config_manager, G_TYPE_OBJECT);
@@ -25,6 +27,7 @@ static void ipcam_config_manager_finalize(GObject *self)
 {
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(IPCAM_CONFIG_MANAGER(self));
     g_hash_table_destroy(priv->conf_hash);
+    g_hash_table_destroy(priv->collection);
     G_OBJECT_CLASS(ipcam_config_manager_parent_class)->finalize(self);
 }
 static void destroy_notify(gpointer data)
@@ -35,6 +38,7 @@ static void ipcam_config_manager_init(IpcamConfigManager *self)
 {
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(self);
     priv->conf_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_notify, destroy_notify);
+    priv->collection = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_notify, destroy_notify);
 }
 static void ipcam_config_manager_class_init(IpcamConfigManagerClass *klass)
 {
@@ -69,21 +73,37 @@ void ipcam_config_manager_merge(IpcamConfigManager *config_manager, const gchar 
 {
     g_return_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager));
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    gchar key[PATH_MAX] = {0};
-    sprintf(key, "config:%s", conf_name);
-    if (!g_hash_table_contains(priv->conf_hash, key))
+    sprintf(priv->key, "config:%s", conf_name);
+    if (!g_hash_table_contains(priv->conf_hash, priv->key))
     {
-        g_hash_table_insert(priv->conf_hash, g_strdup(key), g_strdup(conf_value));
+        g_hash_table_insert(priv->conf_hash, g_strdup(priv->key), g_strdup(conf_value));
     }
 }
 gchar *ipcam_config_manager_get(IpcamConfigManager *config_manager, const gchar *conf_name)
 {
     g_return_val_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager), NULL);
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
-    gchar key[PATH_MAX] = {0};
-    sprintf(key, "config:%s", conf_name);
-    gchar *ret = g_hash_table_lookup(priv->conf_hash, key);
+    sprintf(priv->key, "config:%s", conf_name);
+    gchar *ret = g_hash_table_lookup(priv->conf_hash, priv->key);
     return ret;
+}
+static void generate_collection(gpointer key, gpointer value, gpointer user_data)
+{
+    IpcamConfigManagerPrivate *priv = (IpcamConfigManagerPrivate *)user_data;
+    if (g_str_has_prefix(key, priv->key))
+    {
+        gchar *newkey = (gchar *)key + strlen(priv->key) + 1;
+        g_hash_table_insert(priv->collection, g_strdup(newkey), g_strdup(value));
+    }
+}
+GHashTable *ipcam_config_manager_get_collection(IpcamConfigManager *config_manager, const gchar *conf_name)
+{
+    g_return_val_if_fail(IPCAM_IS_CONFIG_MANAGER(config_manager), NULL);
+    IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(config_manager);
+    sprintf(priv->key, "config:%s", conf_name);
+    g_hash_table_remove_all(priv->collection);
+    g_hash_table_foreach(priv->conf_hash, generate_collection, priv);
+    return priv->collection;
 }
 
 enum storage_flags { VAR, VAL, SEQ }; // "Store as" switch
@@ -156,7 +176,7 @@ static gboolean to_hash(GNode *node, gpointer data) {
         g_free(array[j]);
     }
     g_free(array);
-    printf("%s => %s\n", key, node->data);
+    g_print("%s => %s\n", key, (gchar *)node->data);
     g_hash_table_insert(priv->conf_hash, g_strdup(key), g_strdup(node->data));
 
     return (FALSE);

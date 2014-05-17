@@ -27,6 +27,7 @@ static void ipcam_base_app_client_receive_string_impl(IpcamBaseApp *self,
                                                       const gchar *string);
 static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app);
 static void ipcam_base_app_load_config(IpcamBaseApp *base_app);
+static void ipcam_base_app_apply_config(IpcamBaseApp *base_app);
 static void ipcam_base_app_message_manager_clear(GObject *base_app);
 static void ipcam_base_app_on_timer(IpcamBaseApp *base_app, const gchar *timer_id);
 static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
@@ -78,6 +79,8 @@ static void ipcam_base_app_init(IpcamBaseApp *self)
     ipcam_base_app_load_config(self);
     ipcam_base_app_connect_to_timer(self);
     ipcam_base_app_add_timer(self, "clear_message_manager", "10", ipcam_base_app_message_manager_clear);
+
+    ipcam_base_app_apply_config(self);
 }
 static void ipcam_base_app_class_init(IpcamBaseAppClass *klass)
 {
@@ -268,4 +271,31 @@ const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
     g_return_val_if_fail(IPCAM_IS_BASE_APP(base_app), NULL);
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     return ipcam_config_manager_get(priv->config_manager, config_name);
+}
+GHashTable *ipcam_base_app_get_configs(IpcamBaseApp *base_app,
+                                       const gchar *config_name)
+{
+    g_return_val_if_fail(IPCAM_IS_BASE_APP(base_app), NULL);
+    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
+    return ipcam_config_manager_get_collection(priv->config_manager, config_name);
+}
+static void ipcam_base_app_bind(gpointer key, gpointer value, gpointer user_data)
+{
+    IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
+    ipcam_service_bind_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value);
+}
+static void ipcam_base_app_connect(gpointer key, gpointer value, gpointer user_data)
+{
+    IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
+    gchar *token = ipcam_base_app_get_config(base_app, "token");
+    ipcam_service_connect_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value, token);
+}
+static void ipcam_base_app_apply_config(IpcamBaseApp *base_app)
+{
+    const GHashTable *collection;
+    
+    collection = ipcam_base_app_get_configs(base_app, "bind");
+    g_hash_table_foreach(collection, ipcam_base_app_bind, base_app);
+    collection = ipcam_base_app_get_configs(base_app, "connect");
+    g_hash_table_foreach(collection, ipcam_base_app_connect, base_app);
 }

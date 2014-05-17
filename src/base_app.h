@@ -42,4 +42,6 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
                                  guint timeout);
 const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
                                        const gchar *config_name);
+GHashTable *ipcam_base_app_get_configs(IpcamBaseApp *base_app,
+                                       const gchar *config_name);
 #endif /* __BASE_APP_H__*/

@@ -28,5 +28,6 @@ GType ipcam_config_manager_get_type(void);
 gboolean ipcam_config_manager_load_config(IpcamConfigManager *config_manager, const gchar *file_path);
 void ipcam_config_manager_merge(IpcamConfigManager *config_manager, const gchar *conf_name, const gchar *conf_value);
 gchar *ipcam_config_manager_get(IpcamConfigManager *config_manager, const gchar *conf_name);
+GHashTable *ipcam_config_manager_get_collection(IpcamConfigManager *config_manager, const gchar *conf_name);
 
 #endif /* __CONFIG_MANAGER_H__ */
