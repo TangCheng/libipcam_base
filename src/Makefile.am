@@ -35,7 +35,8 @@ libipcam_base_la_LDFLAGS =
 
 libipcam_base_la_LIBADD = $(LIBIPCAM_BASE_LIBS)
 
-include_HEADERS = \
+ipcam_base_includedir = $(includedir)/libipcam_base-0.1.0
+ipcam_base_include_HEADERS = \
 	libipcam_base.h \
 	message.h \
 	notice_message.h \
@@ -54,7 +55,7 @@ include_HEADERS = \
 	base_app.h
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libipcam_base-0.1.0.pc.in
+pkgconfig_DATA = libipcam_base-0.1.0.pc
 
 EXTRA_DIST = \
 	libipcam_base-0.1.0.pc.in
