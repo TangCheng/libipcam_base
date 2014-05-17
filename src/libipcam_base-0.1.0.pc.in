@@ -9,5 +9,5 @@ Name: liblibipcam_base
 Description: Sample library created by Anjuta project wizard.
 Version: @VERSION@
 Requires: 
-Libs: -L${libdir} -llibipcam_base
+Libs: -L${libdir} -lipcam_base
 Cflags: -I${includedir}
