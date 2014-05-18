@@ -59,3 +59,13 @@ pkgconfig_DATA = libipcam_base-0.1.0.pc
 
 EXTRA_DIST = \
 	libipcam_base-0.1.0.pc.in
+
+bin_PROGRAMS =  \
+	timer
+
+timer_SOURCES =  \
+	timer.c
+
+timer_LDFLAGS =
+
+timer_LDADD = $(LIBIPCAM_BASE_LIBS) -lipcam_base
