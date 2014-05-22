@@ -187,10 +187,7 @@ static void ipcam_base_service_start_impl(IpcamBaseService *self)
 static void ipcam_base_service_stop_impl(IpcamBaseService *self)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    zpoller_destroy(&priv->poller);
-    priv->poller = NULL;
-    zctx_destroy(&priv->mq_context);
-    priv->mq_context = NULL;
+    priv->terminated = TRUE;
 }
 static void *ipcam_base_service_bind_impl(IpcamBaseService *self, const gchar *address)
 {
