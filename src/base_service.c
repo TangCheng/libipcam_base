@@ -207,7 +207,6 @@ static void *ipcam_base_service_connect_impl(IpcamBaseService *self, const gchar
     assert(mq_socket);
     zsocket_set_identity(mq_socket, identity);
     int rc = zsocket_connect(mq_socket, address);
-    assert(rc == 0);
     ipcam_base_service_register_impl(self, mq_socket);
     return mq_socket;
 }
