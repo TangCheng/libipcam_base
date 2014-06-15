@@ -75,7 +75,7 @@ gboolean ipcam_socket_manager_add(IpcamSocketManager *socket_manager,
     value->name = g_strdup(name);
     value->mq_socket = (void *)mq_socket;
     value->type = type;
-    g_hash_table_insert(priv->socket_hash, (gpointer)name, (gpointer)value);
+    g_hash_table_insert(priv->socket_hash, g_strdup(name), (gpointer)value);
     return TRUE;
 }
 static gboolean finder(gpointer key, gpointer value, gpointer user_data)

@@ -282,13 +282,13 @@ GHashTable *ipcam_base_app_get_configs(IpcamBaseApp *base_app,
 static void ipcam_base_app_bind(gpointer key, gpointer value, gpointer user_data)
 {
     IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
-    ipcam_service_bind_by_name(IPCAM_SERVICE(base_app), g_strdup((gchar *)key), (gchar *)value);
+    ipcam_service_bind_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value);
 }
 static void ipcam_base_app_connect(gpointer key, gpointer value, gpointer user_data)
 {
     IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
     gchar *token = ipcam_base_app_get_config(base_app, "token");
-    ipcam_service_connect_by_name(IPCAM_SERVICE(base_app), g_strdup((gchar *)key), (gchar *)value, token);
+    ipcam_service_connect_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value, token);
 }
 static void ipcam_base_app_apply_config(IpcamBaseApp *base_app)
 {
