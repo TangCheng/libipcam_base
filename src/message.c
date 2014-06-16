@@ -194,7 +194,7 @@ IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
         g_object_unref(parser);
         return NULL;
     }
-    jmsg = json_node_copy(json_parser_get_root(parser));
+    jmsg = json_parser_get_root(parser);
     if (!ipcam_message_validate_message(jmsg))
     {
         g_object_unref(parser);
