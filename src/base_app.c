@@ -174,7 +174,7 @@ static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
             }
             g_free(strval);
         }
-        
+
         if (ipcam_message_is_request(msg))
         {
             ipcam_base_app_action_handler(base_app, msg);
@@ -192,6 +192,7 @@ static void ipcam_base_app_receive_string(IpcamBaseApp *base_app,
         {
             // do nothing
         }
+
         g_object_unref(msg);
     }
 }
