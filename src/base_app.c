@@ -258,7 +258,10 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
         token = ipcam_base_app_get_config(base_app, "token");
     }
     g_object_set(G_OBJECT(msg), "token", token, NULL);
-    ipcam_message_manager_register(priv->msg_manager, msg, G_OBJECT(base_app), callback, timeout);
+    if (ipcam_message_is_request(msg))
+    {
+        ipcam_message_manager_register(priv->msg_manager, msg, G_OBJECT(base_app), callback, timeout);
+    }
     gchar **strings = (gchar **)g_new(gpointer, 2);
     strings[0] = ipcam_message_to_string(msg);
     strings[1] = NULL;

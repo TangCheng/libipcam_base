@@ -73,21 +73,21 @@ static void ipcam_response_message_set_property(GObject *object,
         {
             g_free(priv->action);
             priv->action = g_value_dup_string(value);
-            g_print("ipcam response message action: %s\n", priv->action);
+            /* g_print("ipcam response message action: %s\n", priv->action); */
         }
         break;
     case IPCAM_RESPONSE_MESSAGE_ID:
         {
             g_free(priv->id);
             priv->id = g_value_dup_string(value);
-            g_print("ipcam response message id: %s\n", priv->id);
+            /* g_print("ipcam response message id: %s\n", priv->id); */
         }
         break;
     case IPCAM_RESPONSE_MESSAGE_CODE:
         {
             g_free(priv->code);
             priv->code = g_value_dup_string(value);
-            g_print("ipcam response message code: %s\n", priv->code);
+            /* g_print("ipcam response message code: %s\n", priv->code); */
         }
         break;
     default:

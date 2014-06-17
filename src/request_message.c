@@ -75,14 +75,14 @@ static void ipcam_request_message_set_property(GObject *object,
         {
             g_free(priv->action);
             priv->action = g_value_dup_string(value);
-            g_print("ipcam request message action: %s\n", priv->action);
+            /* g_print("ipcam request message action: %s\n", priv->action); */
         }
         break;
     case IPCAM_REQUEST_MESSAGE_ID:
         {
             g_free(priv->id);
             priv->id = g_value_dup_string(value);
-            g_print("ipcam request message id: %s\n", priv->id);
+            /* g_print("ipcam request message id: %s\n", priv->id); */
         }
         break;
     default:

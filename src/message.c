@@ -103,28 +103,28 @@ static void ipcam_message_set_property(GObject *object,
         {
             g_free(priv->type);
             priv->type = g_value_dup_string(value);
-            g_print("ipcam message type: %s\n", priv->type);
+            /* g_print("ipcam message type: %s\n", priv->type); */
         }
         break;
     case IPCAM_MESSAGE_TOKEN:
         {
             g_free(priv->token);
             priv->token = g_value_dup_string(value);
-            g_print("ipcam message token: %s\n", priv->token);
+            /* g_print("ipcam message token: %s\n", priv->token); */
         }
         break;
     case IPCAM_MESSAGE_VERSION:
         {
             g_free(priv->version);
             priv->version = g_value_dup_string(value);
-            g_print("ipcam message version: %s\n", priv->version);
+            /* g_print("ipcam message version: %s\n", priv->version); */
         }
         break;
     case IPCAM_MESSAGE_BODY:
         {
             json_node_free(priv->body);
             priv->body = g_value_get_pointer(value);
-            g_print("ipcam message body: %p\n", priv->body);
+            /* g_print("ipcam message body: %p\n", priv->body); */
         }
         break;
     default:
@@ -205,8 +205,6 @@ IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
     const gchar *type = json_object_get_string_member(head, "type");
     const gchar *action = json_object_get_string_member(head, "action");
     const gchar *id = json_object_get_string_member(head, "id");
-    const gchar *code = json_object_get_string_member(head, "code");
-    const gchar *event = json_object_get_string_member(head, "event");
     const gchar *token = json_object_get_string_member(head, "token");
     const gchar *version = json_object_get_string_member(head, "version");
 
@@ -216,10 +214,12 @@ IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
     }
     else if (0 == strcmp(type, "response"))
     {
+        const gchar *code = json_object_get_string_member(head, "code");
         message = g_object_new(IPCAM_RESPONSE_MESSAGE_TYPE, "action", action, "id", id, "code", code, NULL);
     }
     else if (0 == strcmp(type, "notice"))
     {
+        const gchar *event = json_object_get_string_member(head, "event");
         message = g_object_new(IPCAM_NOTICE_MESSAGE_TYPE, "event", event, NULL);
     }
     if (NULL != message)
