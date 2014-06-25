@@ -37,5 +37,7 @@ gboolean ipcam_service_connect_by_name(IpcamService *service,
                                        const gchar *address,
                                        const gchar *client_id);
 gboolean ipcam_service_bind_by_name(IpcamService *service, const gchar *name, const gchar *address);
+GList *ipcam_service_get_bind_names(IpcamService *service);
+GList *ipcam_service_get_connect_names(IpcamService *service);
 
 #endif /* __SERVICE_H__*/

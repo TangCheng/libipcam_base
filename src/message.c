@@ -203,17 +203,19 @@ IpcamMessage *ipcam_message_parse_from_string(const gchar *json_str)
 
     JsonObject *head = json_object_get_object_member(json_node_get_object(jmsg), "head");
     const gchar *type = json_object_get_string_member(head, "type");
-    const gchar *action = json_object_get_string_member(head, "action");
-    const gchar *id = json_object_get_string_member(head, "id");
     const gchar *token = json_object_get_string_member(head, "token");
     const gchar *version = json_object_get_string_member(head, "version");
 
     if (0 == strcmp(type, "request"))
     {
+        const gchar *action = json_object_get_string_member(head, "action");
+        const gchar *id = json_object_get_string_member(head, "id");
         message = g_object_new(IPCAM_REQUEST_MESSAGE_TYPE, "action", action, "id", id, NULL);
     }
     else if (0 == strcmp(type, "response"))
     {
+        const gchar *action = json_object_get_string_member(head, "action");
+        const gchar *id = json_object_get_string_member(head, "id");
         const gchar *code = json_object_get_string_member(head, "code");
         message = g_object_new(IPCAM_RESPONSE_MESSAGE_TYPE, "action", action, "id", id, "code", code, NULL);
     }

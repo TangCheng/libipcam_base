@@ -18,11 +18,11 @@ typedef struct _IpcamBaseAppPrivate
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamBaseApp, ipcam_base_app, IPCAM_SERVICE_TYPE);
 
-static void ipcam_base_app_server_receive_string_impl(IpcamBaseApp *self,
+static void ipcam_base_app_server_receive_string_impl(IpcamService *self,
                                                       const gchar *name,
                                                       const gchar *client_id,
                                                       const gchar *string);
-static void ipcam_base_app_client_receive_string_impl(IpcamBaseApp *self,
+static void ipcam_base_app_client_receive_string_impl(IpcamService *self,
                                                       const gchar *name,
                                                       const gchar *string);
 static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app);
@@ -93,24 +93,25 @@ static void ipcam_base_app_class_init(IpcamBaseAppClass *klass)
     service_class->server_receive_string = &ipcam_base_app_server_receive_string_impl;
     service_class->client_receive_string = &ipcam_base_app_client_receive_string_impl;
 }
-static void ipcam_base_app_server_receive_string_impl(IpcamBaseApp *self,
+static void ipcam_base_app_server_receive_string_impl(IpcamService *self,
                                                       const gchar *name,
                                                       const gchar *client_id,
                                                       const gchar *string)
 {
-    ipcam_base_app_receive_string(self, string, name, IPCAM_SOCKET_TYPE_SERVER, client_id);
+    ipcam_base_app_receive_string(IPCAM_BASE_APP(self), string, name, IPCAM_SOCKET_TYPE_SERVER, client_id);
 }
-static void ipcam_base_app_client_receive_string_impl(IpcamBaseApp *self,
+static void ipcam_base_app_client_receive_string_impl(IpcamService *self,
                                                       const gchar *name,
                                                       const gchar *string)
 {
+    IpcamBaseApp *base_app = IPCAM_BASE_APP(self);
     if (0 == strcmp(name, IPCAM_TIMER_CLIENT_NAME))
     {
-        ipcam_base_app_on_timer(self, string);
+        ipcam_base_app_on_timer(base_app, string);
     }
     else
     {
-        ipcam_base_app_receive_string(self, string, name, IPCAM_SOCKET_TYPE_CLIENT, NULL);
+        ipcam_base_app_receive_string(base_app, string, name, IPCAM_SOCKET_TYPE_CLIENT, NULL);
     }
 }
 static void ipcam_base_app_load_config(IpcamBaseApp *base_app)
@@ -121,7 +122,7 @@ static void ipcam_base_app_load_config(IpcamBaseApp *base_app)
 }
 static void ipcam_base_app_connect_to_timer(IpcamBaseApp *base_app)
 {
-    gchar *token = ipcam_base_app_get_config(base_app, "token");
+    const gchar *token = ipcam_base_app_get_config(base_app, "token");
     ipcam_service_connect_by_name(IPCAM_SERVICE(base_app),
                                   IPCAM_TIMER_CLIENT_NAME,
                                   IPCAM_TIMER_PUMP_ADDRESS,
@@ -138,7 +139,7 @@ void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
     strings[0] = timer_id;
     strings[1] = interval;
     strings[2] = NULL;
-    gchar *token = ipcam_base_app_get_config(base_app, "token");
+    const gchar *token = ipcam_base_app_get_config(base_app, "token");
     ipcam_service_send_strings(IPCAM_SERVICE(base_app), IPCAM_TIMER_CLIENT_NAME, strings, token);
     g_free(strings);
 }
@@ -252,7 +253,7 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
     g_return_if_fail(IPCAM_IS_MESSAGE(msg));
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
     gboolean is_server = ipcam_service_is_server(IPCAM_SERVICE(base_app), name);
-    gchar *token = "";
+    const gchar *token = "";
     if (!is_server)
     {
         token = ipcam_base_app_get_config(base_app, "token");
@@ -263,11 +264,23 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
         ipcam_message_manager_register(priv->msg_manager, msg, G_OBJECT(base_app), callback, timeout);
     }
     gchar **strings = (gchar **)g_new(gpointer, 2);
-    strings[0] = ipcam_message_to_string(msg);
+    strings[0] = (gchar *)ipcam_message_to_string(msg);
     strings[1] = NULL;
-    ipcam_service_send_strings(IPCAM_SERVICE(base_app), name, strings, client_id);
+    ipcam_service_send_strings(IPCAM_SERVICE(base_app), name, (const gchar **)strings, client_id);
     g_free(strings[0]);
     g_free(strings);
+}
+void ipcam_base_app_broadcast_notice_message(IpcamBaseApp *base_app,
+                                 IpcamMessage *msg,
+                                 const gchar *token)
+{
+    IpcamService *service = IPCAM_SERVICE(base_app);
+    GList *l = g_list_first(ipcam_service_get_connect_names (service));
+    for (; l; l = g_list_next(l))
+    {
+        gchar *name = l->data;
+        ipcam_base_app_send_message(base_app, msg, name, token, NULL, 0);
+    }
 }
 const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
                                        const gchar *config_name)
@@ -291,12 +304,12 @@ static void ipcam_base_app_bind(gpointer key, gpointer value, gpointer user_data
 static void ipcam_base_app_connect(gpointer key, gpointer value, gpointer user_data)
 {
     IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
-    gchar *token = ipcam_base_app_get_config(base_app, "token");
+    const gchar *token = ipcam_base_app_get_config(base_app, "token");
     ipcam_service_connect_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value, token);
 }
 static void ipcam_base_app_apply_config(IpcamBaseApp *base_app)
 {
-    const GHashTable *collection;
+    GHashTable *collection;
     
     collection = ipcam_base_app_get_configs(base_app, "bind");
     g_hash_table_foreach(collection, ipcam_base_app_bind, base_app);

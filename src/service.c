@@ -6,12 +6,14 @@
 typedef struct _IpcamServicePrivate
 {
     IpcamSocketManager *socket_manager;
+    GList *bind_lists;
+    GList *connect_lists;
 } IpcamServicePrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamService, ipcam_service, IPCAM_BASE_SERVICE_TYPE);
 
-static void ipcam_service_stop_impl(IpcamService *service);
-static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket);
+static void ipcam_service_stop_impl(IpcamBaseService *service);
+static void ipcam_service_on_read_impl(IpcamBaseService *service, void *mq_socket);
 
 static GObject *ipcam_service_constructor(GType self_type,
                                           guint n_properties,
@@ -36,6 +38,8 @@ static void ipcam_service_dispose(GObject *self)
 static void ipcam_service_finalize(GObject *self)
 {
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(IPCAM_SERVICE(self));
+    g_list_free_full(priv->bind_lists, g_free);
+    g_list_free_full(priv->connect_lists, g_free);
     g_object_unref(priv->socket_manager);
     G_OBJECT_CLASS(ipcam_service_parent_class)->finalize(self);
 }
@@ -43,6 +47,8 @@ static void ipcam_service_init(IpcamService *self)
 {
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(IPCAM_SERVICE(self));
     priv->socket_manager = g_object_new(IPCAM_SOCKET_MANAGER_TYPE, NULL);
+    priv->bind_lists = NULL;
+    priv->connect_lists = NULL;
 }
 static void ipcam_service_class_init(IpcamServiceClass *klass)
 {
@@ -76,8 +82,9 @@ static void ipcam_service_server_receive_string(IpcamService *self, const gchar 
                    "IpcamServiceClass.client_receive_string() virtual function.",
                    G_OBJECT_TYPE_NAME(self));
 }
-static void ipcam_service_stop_impl(IpcamService *service)
+static void ipcam_service_stop_impl(IpcamBaseService *self)
 {
+    IpcamService *service = IPCAM_SERVICE(self);
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
     ipcam_socket_manager_close_all_socket(priv->socket_manager);
         
@@ -87,12 +94,13 @@ static void ipcam_service_stop_impl(IpcamService *service)
         parent_class->stop(IPCAM_BASE_SERVICE(service));
     }
 }
-static void ipcam_service_on_read_impl(IpcamService *service, void *mq_socket)
+static void ipcam_service_on_read_impl(IpcamBaseService *self, void *mq_socket)
 {
     gchar *name = NULL;
     gchar *string = NULL;
     gchar *client_id = NULL;
     gint type;
+    IpcamService *service = IPCAM_SERVICE(self);
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
     ipcam_socket_manager_get_by_socket(priv->socket_manager, mq_socket, &name, &type);
     g_return_if_fail(name);
@@ -180,6 +188,7 @@ gboolean ipcam_service_connect_by_name(IpcamService *service,
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
     g_return_val_if_fail(!ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
     void *mq_socket = ipcam_base_service_connect(IPCAM_BASE_SERVICE(service), client_id, address);
+    priv->connect_lists = g_list_append(priv->connect_lists, g_strdup(name));
     return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_CLIENT, mq_socket);
 }
 gboolean ipcam_service_bind_by_name(IpcamService *service, const gchar *name, const gchar *address)
@@ -187,9 +196,20 @@ gboolean ipcam_service_bind_by_name(IpcamService *service, const gchar *name, co
     IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
     g_return_val_if_fail(!ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
     void *mq_socket = ipcam_base_service_bind(IPCAM_BASE_SERVICE(service), address);
+    priv->bind_lists = g_list_append(priv->bind_lists, g_strdup(name));
     return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_SERVER, mq_socket);
 }
 
+GList *ipcam_service_get_connect_names(IpcamService *service)
+{
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
 
+    return priv->connect_lists;
+}
 
+GList *ipcam_service_get_bind_names(IpcamService *service)
+{
+    IpcamServicePrivate *priv = ipcam_service_get_instance_private(service);
 
+    return priv->bind_lists;
+}

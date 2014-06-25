@@ -23,7 +23,7 @@ static void ipcam_app_before_impl(IpcamApp *app)
     g_print("app before start\n");
     gchar *token = ipcam_base_app_get_config(IPCAM_BASE_APP(app), "token");
     ipcam_service_connect_by_name(IPCAM_SERVICE(app), "test_app", "tcp://127.0.0.1:3000", token);
-    ipcam_base_app_add_timer(IPCAM_BASE_APP(app), "send_message_test", "5", ipcam_app_send_message_test);
+    ipcam_base_app_add_timer(IPCAM_BASE_APP(app), "send_message_test", "2", ipcam_app_send_message_test);
 
     ipcam_app_send_message_test (app);
 }

@@ -33,4 +33,5 @@ test_base_app_SOURCES = \
 test_base_app1_SOURCES = \
 	test_action_handler.c \
 	app1.c \
-	test_base_app1.c
+	test_base_app1.c \
+	test_event_handler.c
