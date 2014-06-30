@@ -279,7 +279,10 @@ void ipcam_base_app_broadcast_notice_message(IpcamBaseApp *base_app,
     for (; l; l = g_list_next(l))
     {
         gchar *name = l->data;
-        ipcam_base_app_send_message(base_app, msg, name, token, NULL, 0);
+		if (g_strcmp0(name, IPCAM_TIMER_CLIENT_NAME) != 0)
+		{
+			ipcam_base_app_send_message(base_app, msg, name, token, NULL, 0);
+		}
     }
 }
 const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
