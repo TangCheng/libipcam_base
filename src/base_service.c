@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "base_service.h"
 
 #define TIMEOUT_PERIOD    500 /* millsecond */
@@ -20,6 +21,7 @@ typedef struct _IpcamBaseServicePrivate
     gchar* name;
     zctx_t* mq_context;
     zpoller_t *poller;
+	pthread_t service_thread;
     gboolean terminated;
 } IpcamBaseServicePrivate;
 
@@ -102,6 +104,7 @@ static void ipcam_base_service_init(IpcamBaseService *self)
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
     priv->mq_context = zctx_new();
     priv->poller = NULL;
+	priv->service_thread = pthread_self();
     priv->terminated = FALSE;
 }
 static void ipcam_base_service_register_impl(IpcamBaseService *self, void *mq_socket)
@@ -149,6 +152,7 @@ static void ipcam_base_service_on_read(IpcamBaseService *self, void *mq_socket)
                    "IpcamBaseServiceClass.on_read() virtual function.",
                    G_OBJECT_TYPE_NAME(self));
 }
+
 static void ipcam_base_service_do_poll(IpcamBaseService *self)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
@@ -174,10 +178,17 @@ static void ipcam_base_service_do_poll(IpcamBaseService *self)
         zclock_sleep(TIMEOUT_PERIOD);
     }
 }
+
 static void ipcam_base_service_start_impl(IpcamBaseService *self)
 {
     IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    ipcam_base_service_before_start(self);
+
+	if (!pthread_equal(pthread_self(), priv->service_thread)) {
+		g_warn_if_reached();
+		return;
+	}
+
+	ipcam_base_service_before_start(self);
     while (!priv->terminated)
     {
         ipcam_base_service_do_poll(self);
@@ -262,3 +273,9 @@ void* ipcam_base_service_connect(IpcamBaseService *base_service, const gchar *id
     return IPCAM_BASE_SERVICE_GET_CLASS(base_service)->connect(base_service, identity, address);
 }
 
+pthread_t ipcam_base_service_get_thread(IpcamBaseService *base_service)
+{
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(base_service);
+
+	return priv->service_thread;
+}

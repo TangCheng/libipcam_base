@@ -4,6 +4,7 @@
 #include "timer_pump.h"
 #include "socket_manager.h"
 #include "action_handler.h"
+#include "response_message.h"
 #include "event_handler.h"
 
 #define IPCAM_TIMER_CLIENT_NAME "_timer_client"
@@ -242,6 +243,7 @@ void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
     g_return_if_fail(!g_hash_table_contains(priv->handler_hash, (gpointer)handler_name));
     g_hash_table_insert(priv->handler_hash, (gpointer)handler_name, (gpointer)handler_class_type);
 }
+
 void ipcam_base_app_send_message(IpcamBaseApp *base_app,
                                  IpcamMessage *msg,
                                  const gchar *name,
@@ -270,6 +272,27 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
     g_free(strings[0]);
     g_free(strings);
 }
+
+gboolean ipcam_base_app_wait_response(IpcamBaseApp *base_app,
+                                      const char *msg_id,
+                                      gint64 timeout_ms,
+                                      IpcamMessage **response)
+{
+	IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
+	pthread_t cur_thread = pthread_self();
+	pthread_t svr_thread = ipcam_base_service_get_thread(IPCAM_BASE_SERVICE(base_app));
+	gboolean ret = FALSE;
+
+	if (pthread_equal(cur_thread, svr_thread)) {
+		g_warning("Should not call %s() in the same thread.\n", __func__);
+		return FALSE;
+	}
+
+	ret = ipcam_message_manager_wait_for(priv->msg_manager, msg_id, timeout_ms, response);
+
+	return ret;
+}
+
 void ipcam_base_app_broadcast_notice_message(IpcamBaseApp *base_app,
                                  IpcamMessage *msg,
                                  const gchar *token)

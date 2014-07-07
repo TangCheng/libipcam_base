@@ -56,7 +56,7 @@ static void ipcam_notice_message_set_property(GObject *object,
         {
             g_free(priv->event);
             priv->event = g_value_dup_string(value);
-            g_print("ipcam notice message event: %s\n", priv->event);
+            //g_print("ipcam notice message event: %s\n", priv->event);
         }
         break;
     default:

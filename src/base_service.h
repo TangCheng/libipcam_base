@@ -37,5 +37,6 @@ void ipcam_base_service_start(IpcamBaseService *base_service);
 void ipcam_base_service_stop(IpcamBaseService *base_service);
 void* ipcam_base_service_bind(IpcamBaseService *base_service, const gchar *address);
 void* ipcam_base_service_connect(IpcamBaseService *base_service, const gchar *identity, const gchar *address);
+pthread_t ipcam_base_service_get_thread(IpcamBaseService *base_service);
 
 #endif /* __BASE_SERVICE_H__*/

@@ -131,3 +131,17 @@ IpcamMessage *ipcam_request_message_get_response_message(IpcamRequestMessage *re
                                          NULL);
     return message;
 }
+
+const gchar *ipcam_request_message_get_action(IpcamRequestMessage *request_message)
+{
+	IpcamRequestMessagePrivate *priv = ipcam_request_message_get_instance_private(request_message);
+
+	return priv->action;
+}
+
+const gchar *ipcam_request_message_get_id(IpcamRequestMessage *request_message)
+{
+	IpcamRequestMessagePrivate *priv = ipcam_request_message_get_instance_private(request_message);
+
+	return priv->id;
+}

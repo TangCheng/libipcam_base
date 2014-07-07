@@ -25,5 +25,7 @@ struct _IpcamRequestMessageClass
 
 GType ipcam_request_message_get_type(void);
 IpcamMessage *ipcam_request_message_get_response_message(IpcamRequestMessage *request_message, const gchar *code);
+const gchar *ipcam_request_message_get_action(IpcamRequestMessage *request_message);
+const gchar *ipcam_request_message_get_id(IpcamRequestMessage *request_message);
 
 #endif /* __REQUEST_MESSAGE_H__ */

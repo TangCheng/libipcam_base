@@ -127,8 +127,30 @@ static void ipcam_response_message_class_init(IpcamResponseMessageClass *klass)
     
     g_object_class_install_properties(this_class, N_PROPERTIES, obj_properties);
 }
+
 gboolean ipcam_response_message_has_error(IpcamResponseMessage *response_message)
 {
     IpcamResponseMessagePrivate *priv = ipcam_response_message_get_instance_private(response_message);
     return (0 != strcmp(priv->code, "0"));
+}
+
+const gchar *ipcam_response_message_get_action(IpcamResponseMessage *request_message)
+{
+	IpcamResponseMessagePrivate *priv = ipcam_response_message_get_instance_private(request_message);
+
+	return priv->action;
+}
+
+const gchar *ipcam_response_message_get_id(IpcamResponseMessage *request_message)
+{
+	IpcamResponseMessagePrivate *priv = ipcam_response_message_get_instance_private(request_message);
+
+	return priv->id;
+}
+
+const gchar *ipcam_response_message_get_code(IpcamResponseMessage *request_message)
+{
+	IpcamResponseMessagePrivate *priv = ipcam_response_message_get_instance_private(request_message);
+
+	return priv->code;
 }
