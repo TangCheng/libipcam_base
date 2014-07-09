@@ -36,7 +36,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
 gboolean ipcam_message_manager_wait_for(IpcamMessageManager *message_manager,
                                         const char *message_id,
                                         gint64 timeout_ms,
-                                        IpcamMessage **ret_msg);
+                                        IpcamMessage **response);
 gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, IpcamMessage *message);
 void ipcam_message_manager_clear(IpcamMessageManager *message_manager);
 
