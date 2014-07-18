@@ -13,6 +13,7 @@ typedef struct _IpcamSocketManagerHashValue
 typedef struct _IpcamSocketManagerPrivate
 {
     GHashTable *socket_hash;
+	GMutex mutex;
 } IpcamSocketManagerPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamSocketManager, ipcam_socket_manager, G_TYPE_OBJECT);
@@ -38,7 +39,12 @@ static void ipcam_socket_manager_dispose(GObject *self)
 static void ipcam_socket_manager_finalize(GObject *self)
 {
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(IPCAM_SOCKET_MANAGER(self));
+
+    g_mutex_lock(&priv->mutex);
     g_hash_table_destroy(priv->socket_hash);
+    g_mutex_unlock(&priv->mutex);
+    g_mutex_clear(&priv->mutex);
+
     G_OBJECT_CLASS(ipcam_socket_manager_parent_class)->finalize(self);
 }
 static void destroy_notify(gpointer data)
@@ -56,6 +62,7 @@ static void ipcam_socket_manager_init(IpcamSocketManager *self)
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(self);
     priv->socket_hash = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify)free_key, (GDestroyNotify)destroy_notify);
     assert(priv->socket_hash);
+	g_mutex_init(&priv->mutex);
 }
 static void ipcam_socket_manager_class_init(IpcamSocketManagerClass *klass)
 {
@@ -75,7 +82,11 @@ gboolean ipcam_socket_manager_add(IpcamSocketManager *socket_manager,
     value->name = g_strdup(name);
     value->mq_socket = (void *)mq_socket;
     value->type = type;
+
+    g_mutex_lock(&priv->mutex);
     g_hash_table_insert(priv->socket_hash, g_strdup(name), (gpointer)value);
+    g_mutex_unlock(&priv->mutex);
+
     return TRUE;
 }
 static gboolean finder(gpointer key, gpointer value, gpointer user_data)
@@ -85,27 +96,49 @@ static gboolean finder(gpointer key, gpointer value, gpointer user_data)
 }
 gboolean ipcam_socket_manager_delete_by_socket(IpcamSocketManager *socket_manager, const void *mq_socket)
 {
+	int ret;
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    return 0 != g_hash_table_foreach_remove(priv->socket_hash, (GHRFunc)finder, (gpointer)mq_socket);
+
+    g_mutex_lock(&priv->mutex);
+    ret = g_hash_table_foreach_remove(priv->socket_hash, (GHRFunc)finder, (gpointer)mq_socket);
+    g_mutex_unlock(&priv->mutex);
+
+	return ret;
 }
 gboolean ipcam_socket_manager_delete_by_name(IpcamSocketManager *socket_manager, const gchar *name)
 {
+	gboolean ret;
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    return g_hash_table_remove(priv->socket_hash, name);
+
+    g_mutex_lock(&priv->mutex);
+    ret =  g_hash_table_remove(priv->socket_hash, name);
+    g_mutex_unlock(&priv->mutex);
+
+    return ret;
 }
 gboolean ipcam_socket_manager_has_name(IpcamSocketManager *socket_manager, const gchar *name)
 {
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    return g_hash_table_contains(priv->socket_hash, name);
+
+    g_mutex_lock(&priv->mutex);
+    gboolean ret =  g_hash_table_contains(priv->socket_hash, name);
+    g_mutex_unlock(&priv->mutex);
+
+    return ret;
 }
 gboolean ipcam_socket_manager_has_socket(IpcamSocketManager *socket_manager, const void *mq_socket)
 {
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    return NULL != g_hash_table_find(priv->socket_hash, (GHRFunc)finder, (gpointer)mq_socket);   
+
+    g_mutex_lock(&priv->mutex);
+    gpointer ret = g_hash_table_find(priv->socket_hash, (GHRFunc)finder, (gpointer)mq_socket);  
+    g_mutex_unlock(&priv->mutex);
+
+    return NULL != ret;
 }
 gboolean ipcam_socket_manager_get_by_name(IpcamSocketManager *socket_manager,
                                           const gchar *name,
@@ -115,6 +148,8 @@ gboolean ipcam_socket_manager_get_by_name(IpcamSocketManager *socket_manager,
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
     gboolean ret = FALSE;
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
+
+    g_mutex_lock(&priv->mutex);
     IpcamSocketManagerHashValue *value =
         (IpcamSocketManagerHashValue *)g_hash_table_lookup(priv->socket_hash, name);
     if (NULL != value)
@@ -123,6 +158,8 @@ gboolean ipcam_socket_manager_get_by_name(IpcamSocketManager *socket_manager,
         *mq_socket = value->mq_socket;
         ret = TRUE;
     }
+    g_mutex_unlock(&priv->mutex);
+
     return ret;
 }
 gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
@@ -133,6 +170,8 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
     g_return_val_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager), FALSE);
     gboolean ret = FALSE;
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
+
+    g_mutex_lock(&priv->mutex);
     IpcamSocketManagerHashValue *value =
         g_hash_table_find(priv->socket_hash, (GHRFunc)finder, (gpointer)mq_socket);
     if (NULL != value)
@@ -141,17 +180,17 @@ gboolean ipcam_socket_manager_get_by_socket(IpcamSocketManager *socket_manager,
         *name = g_strdup(value->name);
         ret = TRUE;
     }
+    g_mutex_unlock(&priv->mutex);
+
     return ret;
 }
-static void iterator(gpointer key, gpointer value, gpointer user_data)
-{
-    IpcamSocketManagerHashValue *item = (IpcamSocketManagerHashValue *)value;
-    //zsocket_close(item->mq_socket);
-}
+
 void ipcam_socket_manager_close_all_socket(IpcamSocketManager *socket_manager)
 {
     g_return_if_fail(IPCAM_IS_SOCKET_MANAGER(socket_manager));
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(socket_manager);
-    g_hash_table_foreach(priv->socket_hash, (GHFunc)iterator, NULL);
+
+    g_mutex_lock(&priv->mutex);
     g_hash_table_remove_all(priv->socket_hash);
+    g_mutex_unlock(&priv->mutex);
 }

@@ -3,7 +3,6 @@
 
 typedef struct _IpcamMessageWaiterHashValue
 {
-	GMutex mutex;
 	GCond condition;
 	IpcamMessage *message;
 } IpcamMessageWaiterHashValue;
@@ -22,6 +21,7 @@ typedef struct _IpcamMessageManagerPrivate
 {
     GHashTable *msg_hash;
 	GHashTable *waiter_hash;
+	GMutex mutex;
 } IpcamMessageManagerPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamMessageManager, ipcam_message_manager, G_TYPE_OBJECT);
@@ -43,6 +43,7 @@ static void ipcam_message_manager_finalize(GObject *self)
 
     g_hash_table_unref(priv->msg_hash);
 	g_hash_table_unref(priv->waiter_hash);
+	g_mutex_clear(&priv->mutex);
 
 	G_OBJECT_CLASS(ipcam_message_manager_parent_class)->finalize(self);
 }
@@ -65,6 +66,7 @@ static void ipcam_message_manager_init(IpcamMessageManager *self)
     g_assert(priv->msg_hash);
 	priv->waiter_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_key, NULL);
 	g_assert(priv->waiter_hash);
+	g_mutex_init(&priv->mutex);
 }
 
 static void ipcam_message_manager_class_init(IpcamMessageManagerClass *klass)
@@ -87,6 +89,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
     gchar *msg_id;
     g_object_get(G_OBJECT(message), "id", &msg_id, NULL);
 
+	g_mutex_lock(&priv->mutex);
     if (!g_hash_table_contains(priv->msg_hash, msg_id))
     {
         hash_value *value = g_new(hash_value, 1);
@@ -97,6 +100,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
 
         ret = g_hash_table_insert(priv->msg_hash, (gpointer)g_strdup(msg_id), (gpointer)value);
     }
+	g_mutex_unlock(&priv->mutex);
 
     g_free(msg_id);
     return ret;
@@ -109,52 +113,49 @@ gboolean ipcam_message_manager_wait_for(IpcamMessageManager *message_manager,
 {
 	IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
 	IpcamMessageWaiterHashValue *waiter = NULL;
-	GHashTable *waiter_hash;
 	gboolean ret = FALSE;
+
+	message_manager = g_object_ref(message_manager);
 
 	g_assert(IPCAM_IS_MESSAGE_MANAGER(message_manager) && message_id && response);
 
-	waiter_hash = g_hash_table_ref(priv->waiter_hash);
-
-	if (g_hash_table_lookup(waiter_hash, (gconstpointer)message_id)) {
-		g_hash_table_unref(waiter_hash);
+	if (g_hash_table_lookup(priv->waiter_hash, (gconstpointer)message_id)) {
+		g_hash_table_unref(priv->waiter_hash);
 		g_warning("There is already a thread waiting for message '%s'.\n", message_id);
 		return FALSE;
 	}
 
 	waiter = g_new0(IpcamMessageWaiterHashValue, 1);
 	if (waiter == NULL) {
-		g_hash_table_unref(waiter_hash);
+		g_hash_table_unref(priv->waiter_hash);
 		g_error("Out of memory\n");
 		return FALSE;
 	}
 
 	waiter->message = NULL;
 	g_cond_init(&waiter->condition);
-	g_mutex_init(&waiter->mutex);
 
-	g_mutex_lock(&waiter->mutex);
+	g_mutex_lock(&priv->mutex);
 
-	g_hash_table_insert(waiter_hash, (gpointer)g_strdup(message_id), waiter);
+	g_hash_table_insert(priv->waiter_hash, (gpointer)g_strdup(message_id), waiter);
 
 	if (timeout_ms > 0) {
 		gint64 endtime = g_get_monotonic_time () + timeout_ms * G_TIME_SPAN_MILLISECOND;
-		ret = g_cond_wait_until (&waiter->condition, &waiter->mutex, endtime);
+		ret = g_cond_wait_until (&waiter->condition, &priv->mutex, endtime);
 	}
 	else {
-		g_cond_wait (&waiter->condition, &waiter->mutex);
+		g_cond_wait (&waiter->condition, &priv->mutex);
 	}
 
 	g_hash_table_remove(priv->waiter_hash, message_id);
 
-	g_mutex_unlock(&waiter->mutex);
+	g_mutex_unlock(&priv->mutex);
 
-	g_hash_table_unref(waiter_hash);
+	g_object_unref(message_manager);
 
 	*response = waiter->message;
 
 	g_cond_clear(&waiter->condition);
-	g_mutex_clear(&waiter->mutex);
 	g_free(waiter);
 
 	return (ret && *response);
@@ -190,17 +191,15 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
     gchar *msg_id;
     g_object_get(G_OBJECT(message), "id", &msg_id, NULL);
 
+	g_mutex_lock(&priv->mutex);
 	if (g_hash_table_contains(priv->waiter_hash, msg_id))
 	{
 		IpcamMessageWaiterHashValue *waiter = g_hash_table_lookup(priv->waiter_hash, msg_id);
 		if (waiter) {
-			g_mutex_lock(&waiter->mutex);
 			waiter->message = g_object_ref(message);
 			g_cond_broadcast(&waiter->condition);
-			g_mutex_unlock(&waiter->mutex);
 		}
 	}
-
     if (g_hash_table_contains(priv->msg_hash, msg_id))
     {
         hash_value *value = (hash_value *)g_hash_table_lookup(priv->msg_hash, (gconstpointer)msg_id);
@@ -210,6 +209,7 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
 
 		ret = g_hash_table_remove(priv->msg_hash, (gpointer)msg_id);
     }
+	g_mutex_unlock(&priv->mutex);
 
     g_free(msg_id);
     return ret;
@@ -220,6 +220,10 @@ void ipcam_message_manager_clear(IpcamMessageManager *message_manager)
     gint now = time((time_t *)NULL);
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
 
-    g_hash_table_foreach(priv->msg_hash, (GHFunc)clear, (gpointer)&now);
+	g_mutex_lock(&priv->mutex);
+
+	g_hash_table_foreach(priv->msg_hash, (GHFunc)clear, (gpointer)&now);
     g_hash_table_foreach_remove(priv->msg_hash, (GHRFunc)remove, (gpointer)&now);
+
+	g_mutex_unlock(&priv->mutex);
 }
