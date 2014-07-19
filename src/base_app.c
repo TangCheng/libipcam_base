@@ -14,7 +14,9 @@ typedef struct _IpcamBaseAppPrivate
     IpcamConfigManager *config_manager;
     IpcamTimerManager *timer_manager;
     IpcamMessageManager *msg_manager;
-    GHashTable *handler_hash;
+    GHashTable *req_handler_hash;
+    GHashTable *not_handler_hash;
+    GMutex mutex;
 } IpcamBaseAppPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(IpcamBaseApp, ipcam_base_app, IPCAM_SERVICE_TYPE);
@@ -63,10 +65,13 @@ static void ipcam_base_app_dispose(GObject *self)
 static void ipcam_base_app_finalize(GObject *self)
 {
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(IPCAM_BASE_APP(self));
-    g_hash_table_destroy(priv->handler_hash);
+    g_mutex_clear(&priv->mutex);
+    g_hash_table_destroy(priv->req_handler_hash);
+    g_hash_table_destroy(priv->not_handler_hash);
     g_object_unref(priv->config_manager);
     g_object_unref(priv->timer_manager);
     g_object_unref(priv->msg_manager);
+
     G_OBJECT_CLASS(ipcam_base_app_parent_class)->finalize(self);
 }
 static void ipcam_base_app_init(IpcamBaseApp *self)
@@ -75,7 +80,9 @@ static void ipcam_base_app_init(IpcamBaseApp *self)
     priv->config_manager = g_object_new(IPCAM_CONFIG_MANAGER_TYPE, NULL);
     priv->timer_manager = g_object_new(IPCAM_TIMER_MANAGER_TYPE, NULL);
     priv->msg_manager = g_object_new(IPCAM_MESSAGE_MANAGER_TYPE, NULL);
-    priv->handler_hash = g_hash_table_new(g_str_hash, g_str_equal);
+    priv->req_handler_hash = g_hash_table_new(g_str_hash, g_str_equal);
+    priv->not_handler_hash = g_hash_table_new(g_str_hash, g_str_equal);
+    g_mutex_init(&priv->mutex);
 
     ipcam_base_app_load_config(self);
     ipcam_base_app_connect_to_timer(self);
@@ -204,7 +211,11 @@ static void ipcam_base_app_action_handler(IpcamBaseApp *base_app, IpcamMessage *
     gchar *strval;
     g_object_get(G_OBJECT(msg), "action", &strval, NULL);
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
-    action_handler_class_type = (GType)g_hash_table_lookup(priv->handler_hash, (gpointer)strval);
+
+    g_mutex_lock(&priv->mutex);
+    action_handler_class_type = (GType)g_hash_table_lookup(priv->req_handler_hash, (gpointer)strval);
+    g_mutex_unlock(&priv->mutex);
+
     g_free(strval);
     if (G_TYPE_INVALID != action_handler_class_type)
     {
@@ -222,7 +233,11 @@ static void ipcam_base_app_notice_handler(IpcamBaseApp *base_app, IpcamMessage *
     gchar *strval;
     g_object_get(G_OBJECT(msg), "event", &strval, NULL);
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
-    event_handler_class_type = (GType)g_hash_table_lookup(priv->handler_hash, (gpointer)strval);
+
+    g_mutex_lock(&priv->mutex);
+    event_handler_class_type = (GType)g_hash_table_lookup(priv->not_handler_hash, (gpointer)strval);
+    g_mutex_unlock(&priv->mutex);
+
     g_free(strval);
     if (G_TYPE_INVALID != event_handler_class_type)
     {
@@ -234,14 +249,31 @@ static void ipcam_base_app_notice_handler(IpcamBaseApp *base_app, IpcamMessage *
         g_object_unref(handler);
     }
 }
-void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
-                                    const gchar *handler_name,
-                                    GType handler_class_type)
+
+void ipcam_base_app_register_request_handler(IpcamBaseApp *base_app,
+                                             const gchar *handler_name,
+                                             GType handler_class_type)
 {
     g_return_if_fail(IPCAM_IS_BASE_APP(base_app));
     IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
-    g_return_if_fail(!g_hash_table_contains(priv->handler_hash, (gpointer)handler_name));
-    g_hash_table_insert(priv->handler_hash, (gpointer)handler_name, (gpointer)handler_class_type);
+
+    g_mutex_lock(&priv->mutex);
+    if (!g_hash_table_contains(priv->req_handler_hash, (gpointer)handler_name))
+        g_hash_table_insert(priv->req_handler_hash, (gpointer)handler_name, (gpointer)handler_class_type);
+    g_mutex_unlock(&priv->mutex);
+}
+
+void ipcam_base_app_register_notice_handler(IpcamBaseApp *base_app,
+                                            const gchar *handler_name,
+                                            GType handler_class_type)
+{
+    g_return_if_fail(IPCAM_IS_BASE_APP(base_app));
+    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(base_app);
+
+    g_mutex_lock(&priv->mutex);
+    if (!g_hash_table_contains(priv->not_handler_hash, (gpointer)handler_name))
+        g_hash_table_insert(priv->not_handler_hash, (gpointer)handler_name, (gpointer)handler_class_type);
+    g_mutex_unlock(&priv->mutex);
 }
 
 void ipcam_base_app_send_message(IpcamBaseApp *base_app,

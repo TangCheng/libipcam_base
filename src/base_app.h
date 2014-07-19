@@ -31,9 +31,12 @@ void ipcam_base_app_add_timer(IpcamBaseApp *base_app,
                               const gchar *timer_id,
                               const gchar *interval,
                               TCFunc callback);
-void ipcam_base_app_register_handler(IpcamBaseApp *base_app,
-                                     const gchar *handler_name,
-                                     GType handler_class_type);
+void ipcam_base_app_register_request_handler(IpcamBaseApp *base_app,
+                                             const gchar *handler_name,
+                                             GType handler_class_type);
+void ipcam_base_app_register_notice_handler(IpcamBaseApp *base_app,
+                                            const gchar *handler_name,
+                                            GType handler_class_type);
 void ipcam_base_app_send_message(IpcamBaseApp *base_app,
                                  IpcamMessage *msg,
                                  const gchar *name,
