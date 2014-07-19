@@ -326,11 +326,11 @@ gboolean ipcam_base_app_wait_response(IpcamBaseApp *base_app,
 }
 
 void ipcam_base_app_broadcast_notice_message(IpcamBaseApp *base_app,
-                                 IpcamMessage *msg,
-                                 const gchar *token)
+                                             IpcamMessage *msg,
+                                             const gchar *token)
 {
     IpcamService *service = IPCAM_SERVICE(base_app);
-    GList *l = g_list_first(ipcam_service_get_connect_names (service));
+    GList *l = g_list_first(ipcam_service_get_publish_names (service));
     for (; l; l = g_list_next(l))
     {
         gchar *name = l->data;
@@ -359,11 +359,21 @@ static void ipcam_base_app_bind(gpointer key, gpointer value, gpointer user_data
     IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
     ipcam_service_bind_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value);
 }
+static void ipcam_base_app_bind_publish(gpointer key, gpointer value, gpointer user_data)
+{
+    IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
+    ipcam_service_publish_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value);
+}
 static void ipcam_base_app_connect(gpointer key, gpointer value, gpointer user_data)
 {
     IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
     const gchar *token = ipcam_base_app_get_config(base_app, "token");
     ipcam_service_connect_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value, token);
+}
+static void ipcam_base_app_subscribe(gpointer key, gpointer value, gpointer user_data)
+{
+    IpcamBaseApp *base_app = IPCAM_BASE_APP(user_data);
+    ipcam_service_subscirbe_by_name(IPCAM_SERVICE(base_app), (gchar *)key, (gchar *)value);
 }
 static void ipcam_base_app_apply_config(IpcamBaseApp *base_app)
 {
@@ -373,4 +383,8 @@ static void ipcam_base_app_apply_config(IpcamBaseApp *base_app)
     g_hash_table_foreach(collection, ipcam_base_app_bind, base_app);
     collection = ipcam_base_app_get_configs(base_app, "connect");
     g_hash_table_foreach(collection, ipcam_base_app_connect, base_app);
+    collection = ipcam_base_app_get_configs(base_app, "publish");
+    g_hash_table_foreach(collection, ipcam_base_app_bind_publish, base_app);
+    collection = ipcam_base_app_get_configs(base_app, "subscribe");
+    g_hash_table_foreach(collection, ipcam_base_app_subscribe, base_app);
 }

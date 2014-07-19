@@ -8,6 +8,8 @@ enum
 {
      IPCAM_SOCKET_TYPE_SERVER = 0,
      IPCAM_SOCKET_TYPE_CLIENT = 1,
+     IPCAM_SOCKET_TYPE_PUBLISHER = 2,
+     IPCAM_SOCKET_TYPE_SUBSCRIBER = 3,
 };
      
 #define IPCAM_SOCKET_MANAGER_TYPE (ipcam_socket_manager_get_type())

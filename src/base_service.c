@@ -221,6 +221,25 @@ static void *ipcam_base_service_connect_impl(IpcamBaseService *self, const gchar
     ipcam_base_service_register_impl(self, mq_socket);
     return mq_socket;
 }
+static void *ipcam_base_service_publish_impl(IpcamBaseService *self, const gchar *address)
+{
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
+    void *mq_socket = NULL;
+    mq_socket = zsocket_new(priv->mq_context, ZMQ_PUB);
+    assert(mq_socket);
+    int rc = zsocket_bind(mq_socket, address);
+    return mq_socket;
+}
+static void *ipcam_base_service_subscribe_impl(IpcamBaseService *self, const gchar *address)
+{
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
+    void *mq_socket = NULL;
+    mq_socket = zsocket_new(priv->mq_context, ZMQ_SUB);
+    assert(mq_socket);
+    int rc = zsocket_connect(mq_socket, address);
+    ipcam_base_service_register_impl(self, mq_socket);
+    return mq_socket;
+}
 static void ipcam_base_service_class_init(IpcamBaseServiceClass *klass)
 {
     GObjectClass *this_class = G_OBJECT_CLASS(klass);
@@ -244,6 +263,8 @@ static void ipcam_base_service_class_init(IpcamBaseServiceClass *klass)
     klass->stop = &ipcam_base_service_stop_impl;
     klass->bind = &ipcam_base_service_bind_impl;
     klass->connect = &ipcam_base_service_connect_impl;
+    klass->publish = &ipcam_base_service_publish_impl;
+    klass->subscribe = &ipcam_base_service_subscribe_impl;
     klass->before = NULL;
     klass->in_loop = NULL;
     klass->on_read = NULL;
@@ -271,6 +292,20 @@ void* ipcam_base_service_connect(IpcamBaseService *base_service, const gchar *id
 {
     g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(base_service), NULL);
     return IPCAM_BASE_SERVICE_GET_CLASS(base_service)->connect(base_service, identity, address);
+}
+
+void* ipcam_base_service_publish(IpcamBaseService *base_service,
+                                 const gchar *address)
+{
+    g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(base_service), NULL);
+    return IPCAM_BASE_SERVICE_GET_CLASS(base_service)->publish(base_service, address);
+}
+
+void* ipcam_base_service_subscribe(IpcamBaseService *base_service,
+                                   const gchar *address)
+{
+    g_return_val_if_fail(IPCAM_IS_BASE_SERVICE(base_service), NULL);
+    return IPCAM_BASE_SERVICE_GET_CLASS(base_service)->subscribe(base_service, address);
 }
 
 pthread_t ipcam_base_service_get_thread(IpcamBaseService *base_service)
