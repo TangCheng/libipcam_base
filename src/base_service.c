@@ -236,6 +236,7 @@ static void *ipcam_base_service_subscribe_impl(IpcamBaseService *self, const gch
     void *mq_socket = NULL;
     mq_socket = zsocket_new(priv->mq_context, ZMQ_SUB);
     assert(mq_socket);
+    zsocket_set_subscribe(mq_socket, "");
     int rc = zsocket_connect(mq_socket, address);
     ipcam_base_service_register_impl(self, mq_socket);
     return mq_socket;
