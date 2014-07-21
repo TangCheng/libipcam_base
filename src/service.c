@@ -109,6 +109,7 @@ static void ipcam_service_on_read_impl(IpcamBaseService *self, void *mq_socket)
         string = zstr_recv(mq_socket);
         ipcam_service_server_receive_string(service, name, client_id, string);
         break;
+    case IPCAM_SOCKET_TYPE_SUBSCRIBER:
     case IPCAM_SOCKET_TYPE_CLIENT:
         string = zstr_recv(mq_socket);
         ipcam_service_client_receive_string(service, name, string);
@@ -210,7 +211,7 @@ gboolean ipcam_service_publish_by_name(IpcamService *service, const gchar *name,
     g_return_val_if_fail(!ipcam_socket_manager_has_name(priv->socket_manager, name), FALSE);
     void *mq_socket = ipcam_base_service_publish(IPCAM_BASE_SERVICE(service), address);
     priv->publish_lists = g_list_append(priv->publish_lists, g_strdup(name));
-    return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_SERVER, mq_socket);
+    return ipcam_socket_manager_add(priv->socket_manager, name, IPCAM_SOCKET_TYPE_PUBLISHER, mq_socket);
 }
 
 GList *ipcam_service_get_publish_names(IpcamService *service)

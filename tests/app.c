@@ -50,6 +50,10 @@ static void ipcam_app_send_message_test(GObject *app)
                                 message_handler, 5);
     g_object_unref(rq_msg);
     g_object_unref(builder);
+
+    IpcamNoticeMessage *nc_msg = g_object_new(IPCAM_NOTICE_MESSAGE_TYPE, "event", "set_base_info", NULL);
+    ipcam_base_app_broadcast_notice_message(IPCAM_BASE_APP(app), IPCAM_MESSAGE(nc_msg), NULL);
+    g_object_unref(nc_msg);
 }
 static void message_handler(GObject *obj, IpcamMessage* msg, gboolean timeout)
 {
