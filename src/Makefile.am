@@ -63,6 +63,7 @@ EXTRA_DIST = \
 bin_PROGRAMS =  \
 	timer
 
+timer_DEPENDENCIES = libipcam_base.la
 timer_SOURCES =  \
 	timer.c
 

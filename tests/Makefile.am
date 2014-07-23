@@ -14,22 +14,28 @@ noinst_PROGRAMS =  \
 	test_base_app \
 	test_base_app1
 
+test_service_DEPENDENCIES = $(top_builddir)/src/libipcam_base.la 
 test_service_SOURCES =  \
 	test_service.c
 
+test_timer_pump_DEPENDENCIES = $(top_builddir)/src/libipcam_base.la 
 test_timer_pump_SOURCES = \
 	test_timer_pump.c
 
+test_notice_message_DEPENDENCIES = $(top_builddir)/src/libipcam_base.la 
 test_notice_message_SOURCES =  \
 	test_notice_message.c
 
+test_request_message_DEPENDENCIES = $(top_builddir)/src/libipcam_base.la 
 test_request_message_SOURCES =  \
 	test_request_message.c
 
+test_base_app_DEPENDENCIES = $(top_builddir)/src/libipcam_base.la 
 test_base_app_SOURCES = \
 	app.c \
 	test_base_app.c
 
+test_base_app1_DEPENDENCIES = $(top_builddir)/src/libipcam_base.la 
 test_base_app1_SOURCES = \
 	test_action_handler.c \
 	app1.c \
