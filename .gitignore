@@ -1,5 +1,5 @@
 *.anjuta*
-build
+build*
 *.*~
 *.in
 *.cache

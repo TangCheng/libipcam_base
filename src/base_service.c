@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include "base_service.h"
 
-#define TIMEOUT_PERIOD    100 /* millsecond */
+#define TIMEOUT_PERIOD    450 /* millsecond */
 
 enum
 {

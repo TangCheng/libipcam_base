@@ -48,23 +48,12 @@ static void ipcam_message_manager_finalize(GObject *self)
 	G_OBJECT_CLASS(ipcam_message_manager_parent_class)->finalize(self);
 }
 
-static void destroy_notify(gpointer data)
-{
-    hash_value *value = (hash_value *)data;
-    g_free(value);
-}
-
-static void destroy_key(gpointer data)
-{
-    g_free(data);
-}
-
 static void ipcam_message_manager_init(IpcamMessageManager *self)
 {
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(self);
-    priv->msg_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_key, (GDestroyNotify)destroy_notify);
+    priv->msg_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     g_assert(priv->msg_hash);
-	priv->waiter_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_key, NULL);
+	priv->waiter_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 	g_assert(priv->waiter_hash);
 	g_mutex_init(&priv->mutex);
 }

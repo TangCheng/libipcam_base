@@ -47,10 +47,6 @@ static void ipcam_timer_pump_finalize(GObject *self)
     g_hash_table_destroy(priv->timers_hash);
     G_OBJECT_CLASS(ipcam_timer_pump_parent_class)->finalize(self);
 }
-static void destroy_key(gpointer data)
-{
-    g_free(data);
-}
 static void destroy_value(gpointer data)
 {
     hash_value *value = (hash_value*)data;
@@ -63,8 +59,7 @@ static void ipcam_timer_pump_init(IpcamTimerPump *self)
     IpcamTimerPumpPrivate *priv = ipcam_timer_pump_get_instance_private(self);
     priv->server_socket = ipcam_base_service_bind(IPCAM_BASE_SERVICE(self), IPCAM_TIMER_PUMP_ADDRESS);
     assert(priv->server_socket);
-    priv->timers_hash = g_hash_table_new_full(g_str_hash, g_str_equal,
-                                              (GDestroyNotify)destroy_key,
+    priv->timers_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, 
                                               (GDestroyNotify)destroy_value);
 }
 static void ipcam_timer_pump_class_init(IpcamTimerPumpClass *klass)

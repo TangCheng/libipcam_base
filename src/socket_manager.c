@@ -53,14 +53,11 @@ static void destroy_notify(gpointer data)
     g_free(value->name);
     g_free(value);
 }
-static void free_key(gpointer data)
-{
-    g_free(data);
-}
 static void ipcam_socket_manager_init(IpcamSocketManager *self)
 {
     IpcamSocketManagerPrivate *priv = ipcam_socket_manager_get_instance_private(self);
-    priv->socket_hash = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify)free_key, (GDestroyNotify)destroy_notify);
+    priv->socket_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
+                                              (GDestroyNotify)destroy_notify);
     assert(priv->socket_hash);
 	g_mutex_init(&priv->mutex);
 }

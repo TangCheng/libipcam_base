@@ -30,15 +30,11 @@ static void ipcam_config_manager_finalize(GObject *self)
     g_hash_table_destroy(priv->collection);
     G_OBJECT_CLASS(ipcam_config_manager_parent_class)->finalize(self);
 }
-static void destroy_notify(gpointer data)
-{
-    g_free(data);
-}
 static void ipcam_config_manager_init(IpcamConfigManager *self)
 {
     IpcamConfigManagerPrivate *priv = ipcam_config_manager_get_instance_private(self);
-    priv->conf_hash = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_notify, destroy_notify);
-    priv->collection = g_hash_table_new_full(g_str_hash, g_str_equal, destroy_notify, destroy_notify);
+    priv->conf_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    priv->collection = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 }
 static void ipcam_config_manager_class_init(IpcamConfigManagerClass *klass)
 {
