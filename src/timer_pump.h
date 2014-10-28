@@ -3,7 +3,7 @@
 
 #include "service.h"
 
-#define IPCAM_TIMER_PUMP_ADDRESS "ipc:///tmp/ipcam_timer_pump"
+#define IPCAM_TIMER_PUMP_ADDRESS "ipc:///tmp/ipcam_timer_pump.socket"
 
 #define IPCAM_TIMER_PUMP_TYPE (ipcam_timer_pump_get_type())
 #define IPCAM_TIMER_PUMP(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), IPCAM_TIMER_PUMP_TYPE, IpcamTimerPump))
