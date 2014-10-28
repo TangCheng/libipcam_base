@@ -90,7 +90,6 @@ static void ipcam_timer_pump_on_read_impl(IpcamTimerPump *timer_pump, void *mq_s
     if (interval && client_id && timer_id)
     {
         n_interval = strtol(interval, NULL, 10);
-        g_print("%ld\n", n_interval);
         if (n_interval < 1)
         {
             ipcam_timer_pump_unregister(timer_pump, client_id, timer_id);
