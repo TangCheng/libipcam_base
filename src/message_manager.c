@@ -155,7 +155,7 @@ static void clear(gpointer key, gpointer value, gpointer user_data)
     hash_value *val = (hash_value *)value;
     gint now = *(gint *)user_data;
 
-    if (now - val->time >= val->timeout)
+    if ((now - val->time >= val->timeout) && val->callback)
         val->callback(val->obj, NULL, TRUE);
 }
 
