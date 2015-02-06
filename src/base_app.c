@@ -54,13 +54,13 @@ static GObject *ipcam_base_app_constructor(GType self_type,
 }
 static void ipcam_base_app_dispose(GObject *self)
 {
-    static gboolean first_run = TRUE;
+    IpcamBaseAppPrivate *priv = ipcam_base_app_get_instance_private(IPCAM_BASE_APP(self));
 
-    if (first_run)
-    {
-        first_run = FALSE;
-        G_OBJECT_CLASS(ipcam_base_app_parent_class)->dispose(self);
-    }
+    if (priv->config_manager) g_clear_object(&priv->config_manager);
+    if (priv->timer_manager) g_clear_object(&priv->timer_manager);
+    if (priv->msg_manager) g_clear_object(&priv->msg_manager);
+
+    G_OBJECT_CLASS(ipcam_base_app_parent_class)->dispose(self);
 }
 static void ipcam_base_app_finalize(GObject *self)
 {
@@ -68,9 +68,6 @@ static void ipcam_base_app_finalize(GObject *self)
     g_mutex_clear(&priv->mutex);
     g_hash_table_destroy(priv->req_handler_hash);
     g_hash_table_destroy(priv->not_handler_hash);
-    g_object_unref(priv->config_manager);
-    g_object_unref(priv->timer_manager);
-    g_object_unref(priv->msg_manager);
 
     G_OBJECT_CLASS(ipcam_base_app_parent_class)->finalize(self);
 }

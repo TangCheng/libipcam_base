@@ -41,13 +41,7 @@ static GObject *ipcam_base_service_constructor(GType self_type,
 }
 static void ipcam_base_service_dispose(GObject *self)
 {
-    static gboolean first_run = TRUE;
-
-    if (first_run)
-    {
-        first_run = FALSE;
-        G_OBJECT_CLASS(ipcam_base_service_parent_class)->dispose(self);
-    }
+    G_OBJECT_CLASS(ipcam_base_service_parent_class)->dispose(self);
 }
 static void ipcam_base_service_finalize(GObject *self)
 {
@@ -197,8 +191,6 @@ static void ipcam_base_service_start_impl(IpcamBaseService *self)
 }
 static void ipcam_base_service_stop_impl(IpcamBaseService *self)
 {
-    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(self);
-    priv->terminated = TRUE;
 }
 static void *ipcam_base_service_bind_impl(IpcamBaseService *self, const gchar *address)
 {
@@ -279,7 +271,12 @@ void ipcam_base_service_start(IpcamBaseService *base_service)
 
 void ipcam_base_service_stop(IpcamBaseService *base_service)
 {
+    IpcamBaseServicePrivate *priv = ipcam_base_service_get_instance_private(base_service);
+
     g_return_if_fail(IPCAM_IS_BASE_SERVICE(base_service));
+
+    priv->terminated = TRUE;
+
     IPCAM_BASE_SERVICE_GET_CLASS(base_service)->stop(base_service);
 }
 
