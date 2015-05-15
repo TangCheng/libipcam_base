@@ -47,9 +47,6 @@ gboolean ipcam_base_app_wait_response(IpcamBaseApp *base_app,
                                       const char *msg_id,
                                       gint64 timeout_ms,
                                       IpcamMessage **response);
-void ipcam_base_app_broadcast_notice_message(IpcamBaseApp *base_app,
-                                 IpcamMessage *msg,
-                                 const gchar *name);
 const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
                                        const gchar *config_name);
 GHashTable *ipcam_base_app_get_configs(IpcamBaseApp *base_app,

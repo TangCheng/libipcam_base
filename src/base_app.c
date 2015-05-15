@@ -294,12 +294,11 @@ void ipcam_base_app_send_message(IpcamBaseApp *base_app,
     {
         ipcam_message_manager_register(priv->msg_manager, msg, G_OBJECT(base_app), callback, timeout);
     }
-    gchar **strings = (gchar **)g_new(gpointer, 2);
+    gchar *strings[2];
     strings[0] = (gchar *)ipcam_message_to_string(msg);
     strings[1] = NULL;
-    ipcam_service_send_strings(IPCAM_SERVICE(base_app), name, (const gchar **)strings, client_id);
+    ipcam_service_send_strings(IPCAM_SERVICE(base_app), name, strings, client_id);
     g_free(strings[0]);
-    g_free(strings);
 }
 
 gboolean ipcam_base_app_wait_response(IpcamBaseApp *base_app,
@@ -322,21 +321,6 @@ gboolean ipcam_base_app_wait_response(IpcamBaseApp *base_app,
 	return ret;
 }
 
-void ipcam_base_app_broadcast_notice_message(IpcamBaseApp *base_app,
-                                             IpcamMessage *msg,
-                                             const gchar *token)
-{
-    IpcamService *service = IPCAM_SERVICE(base_app);
-    GList *l = g_list_first(ipcam_service_get_publish_names (service));
-    for (; l; l = g_list_next(l))
-    {
-        gchar *name = l->data;
-		if (g_strcmp0(name, IPCAM_TIMER_CLIENT_NAME) != 0)
-		{
-			ipcam_base_app_send_message(base_app, msg, name, token, NULL, 0);
-		}
-    }
-}
 const gchar *ipcam_base_app_get_config(IpcamBaseApp *base_app,
                                        const gchar *config_name)
 {
