@@ -104,9 +104,27 @@ static void ipcam_timer_pump_on_read_impl(IpcamTimerPump *timer_pump, void *mq_s
     zstr_free(&timer_id);
     zstr_free(&client_id);
 }
+
+static time_t get_monotonic_time(time_t *tloc)
+{
+    struct timespec tsNow;
+    time_t t;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &tsNow) == 0) {
+        t = tsNow.tv_sec;
+        if (tloc)
+            *tloc = t;
+    }
+    else {
+        t = time(tloc);
+    }
+
+    return t;
+}
+
 static void ipcam_timer_pump_check_timer(gpointer key, gpointer value, gpointer user_data)
 {
-    gint now = time((time_t *)NULL);
+    gint now = get_monotonic_time(NULL);
     IpcamTimerPumpPrivate *priv = (IpcamTimerPumpPrivate *)user_data;
     hash_value *val = (hash_value *)value;
     if (val->time_begin + val->interval <= now)
@@ -141,7 +159,7 @@ static void ipcam_timer_pump_register(IpcamTimerPump *timer_pump,
     value->client_id = g_strdup(client_id);
     value->timer_id = g_strdup(timer_id);
     value->interval = interval;
-    value->time_begin = time((time_t *)NULL);
+    value->time_begin = get_monotonic_time(NULL);
     value->count = 0;
     
     g_hash_table_insert(priv->timers_hash, key, value);

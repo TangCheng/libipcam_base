@@ -65,6 +65,17 @@ static void ipcam_message_manager_class_init(IpcamMessageManagerClass *klass)
     this_class->finalize = &ipcam_message_manager_finalize;
 }
 
+static time_t get_monotonic_time(void)
+{
+    struct timespec tsNow;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &tsNow) == 0) {
+        return tsNow.tv_sec;
+    }
+
+    return time(NULL);
+}
+
 gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
                                         IpcamMessage *message,
                                         GObject *obj,
@@ -82,7 +93,7 @@ gboolean ipcam_message_manager_register(IpcamMessageManager *message_manager,
     if (!g_hash_table_contains(priv->msg_hash, msg_id))
     {
         hash_value *value = g_new(hash_value, 1);
-        value->time = time((time_t *)NULL);
+        value->time = get_monotonic_time();
         value->timeout = timeout;
         value->obj = obj;
         value->callback = handler;
@@ -206,7 +217,7 @@ gboolean ipcam_message_manager_handle(IpcamMessageManager *message_manager, Ipca
 
 void ipcam_message_manager_clear(IpcamMessageManager *message_manager)
 {
-    gint now = time((time_t *)NULL);
+    gint now = get_monotonic_time();
     IpcamMessageManagerPrivate *priv = ipcam_message_manager_get_instance_private(message_manager);
 
 	g_mutex_lock(&priv->mutex);
